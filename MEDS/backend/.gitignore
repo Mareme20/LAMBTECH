@@ -1,0 +1,27 @@
+mm# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+ 
+
+# Runtime / uploads
+uploads/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+
+# Jest
+jest-cache/
+

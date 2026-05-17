@@ -1,0 +1,16 @@
+export enum OrderStatus {
+
+  EN_ATTENTE = "EN_ATTENTE",
+
+  PAYEE = "PAYEE",
+
+  EN_PREPARATION = "EN_PREPARATION",
+
+  PRETE = "PRETE",
+
+  EN_LIVRAISON = "EN_LIVRAISON",
+
+  LIVREE = "LIVREE",
+
+  ANNULEE = "ANNULEE",
+}

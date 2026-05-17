@@ -1,0 +1,162 @@
+### MEDS REST Client (VSCode REST Client)
+### Exécution : clic sur "Send Request" au-dessus de chaque requête
+### Base URL : http://localhost:5000
+
+@baseUrl = http://localhost:5000
+
+
+### ========== 1) AUTH REGISTER (PATIENT) ==========
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "nomComplet": "Demo Patient",
+  "telephone": "770000001",
+  "email": "demo_patient_1@example.com",
+  "motDePasse": "Password123!",
+  "role": "PATIENT"
+}
+
+
+### ========== 2) AUTH REGISTER (PHARMACIE) ==========
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "nomComplet": "Demo Pharmacie",
+  "telephone": "770000002",
+  "email": "demo_pharmacie_1@example.com",
+  "motDePasse": "Password123!",
+  "role": "PHARMACIE"
+}
+
+
+### ========== 3) AUTH REGISTER (LIVREUR) ==========
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "nomComplet": "Demo Livreur",
+  "telephone": "770000003",
+  "email": "demo_livreur_1@example.com",
+  "motDePasse": "Password123!",
+  "role": "LIVREUR"
+}
+
+
+### ========== 4) AUTH LOGIN (PATIENT) ==========
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo_patient_1@example.com",
+  "motDePasse": "Password123!"
+}
+
+// Dans la réponse, copie/colle le token PATIENT dans la variable ci-dessous.
+@token_patient =
+
+
+### ========== 5) AUTH LOGIN (PHARMACIE) ==========
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo_pharmacie_1@example.com",
+  "motDePasse": "Password123!"
+}
+
+// Dans la réponse, copie/colle le token PHARMACIE dans la variable ci-dessous.
+@token_pharmacie =
+
+
+### ========== 6) AUTH LOGIN (LIVREUR) ==========
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo_livreur_1@example.com",
+  "motDePasse": "Password123!"
+}
+
+// Dans la réponse, copie/colle le token LIVREUR dans la variable ci-dessous.
+@token_livreur =
+
+
+### ========== 7) STATS ==========
+GET {{baseUrl}}/api/stats/epidemiology
+
+
+
+### ========== 4) AI CHAT ==========
+POST {{baseUrl}}/api/ai/chat
+Content-Type: application/json
+
+{
+  "message": "Bonjour",
+  "lang": "FR"
+}
+
+
+### ========== 5) AI SCAN PRESCRIPTION (mock) ==========
+POST {{baseUrl}}/api/ai/scan
+Content-Type: application/json
+
+{}
+
+
+### ========== 6) MEDICAMENTS NEARBY (public) ==========
+GET {{baseUrl}}/api/medicaments/nearby?lat=4.00&lon=-1.00&medicamentId=1&rayon=10
+
+
+### ========== 7) STOCK (protégé) ==========
+@authHeader = Authorization: Bearer {{token_pharmacie}}
+
+
+POST {{baseUrl}}/api/stocks
+{{authHeader}}
+Content-Type: application/json
+
+{
+  "pharmacieId": 1,
+  "medicamentId": 1,
+  "quantite": 20
+}
+
+
+### ========== 8) STOCK SEARCH ==========
+GET {{baseUrl}}/api/stocks/search?nom=Paracetamol&latitude=4.00&longitude=-1.00
+
+
+### ========== 9) COMMANDES (protégée) ==========
+POST {{baseUrl}}/api/commandes/
+{{authHeader}}
+Content-Type: application/json
+
+{
+  "patientId": 2,
+  "pharmacieId": 1,
+  "montantTotal": 5000
+}
+
+
+### ========== 10) UPDATE COMMANDE STATUS ==========
+PUT {{baseUrl}}/api/commandes/1/status
+{{authHeader}}
+Content-Type: application/json
+
+{
+  "statut": "PAYEE"
+}
+
+
+### ========== 11) WAVE WEBHOOK (signature requise si non-mock) ==========
+POST {{baseUrl}}/api/payments/wave/webhook
+Content-Type: application/json
+wave-signature: 
+
+{
+  "order_id": 1
+}
+
+
