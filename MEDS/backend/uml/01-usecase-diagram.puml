@@ -1,0 +1,132 @@
+@startuml MEDS_Diagramme_Cas_Utilisation
+left to right direction
+
+' ============================================
+' ACTEURS
+' ============================================
+
+actor ":Client" as Client
+actor ":Pharmacien" as Pharmacien
+actor ":Livreur" as Livreur
+actor ":Administrateur" as Admin
+actor ":Wave" as WaveSystem
+actor ":Système_IA" as IASystem
+actor ":Google_Maps" as GoogleMaps
+
+' ============================================
+' CAS D'UTILISATION - CLIENT
+' ============================================
+rectangle "Client" {
+  usecase "UC01 - S'inscrire /\nSe connecter" as UC01
+  usecase "UC02 - Rechercher un médicament\npar nom ou molécule" as UC02
+  usecase "UC03 - Trouver les pharmacies\nà proximité" as UC03
+  usecase "UC04 - Consulter les stocks\nd'un médicament" as UC04
+  usecase "UC05 - Scanner une ordonnance\n(reconnaissance OCR)" as UC05
+  usecase "UC06 - Passer une commande" as UC06
+  usecase "UC07 - Suivre sa commande\nen temps réel" as UC07
+  usecase "UC08 - Payer via Wave" as UC08
+  usecase "UC09 - Noter le service\nde livraison" as UC09
+  usecase "UC10 - Discuter avec\nle chatbot IA" as UC10
+}
+
+' ============================================
+' CAS D'UTILISATION - PHARMACIEN
+' ============================================
+rectangle "Pharmacien" {
+  usecase "UC11 - Gérer le profil\nde sa pharmacie" as UC11
+  usecase "UC12 - Ajouter / modifier\nles stocks" as UC12
+  usecase "UC13 - Accepter ou refuser\nune commande" as UC13
+  usecase "UC14 - Marquer commande\nen préparation" as UC14
+  usecase "UC15 - Modifier les\nhoraires d'ouverture" as UC15
+}
+
+' ============================================
+' CAS D'UTILISATION - LIVREUR
+' ============================================
+rectangle "Livreur" {
+  usecase "UC16 - S'enregistrer\ncomme disponible" as UC16
+  usecase "UC17 - Mettre à jour\nsa position GPS" as UC17
+  usecase "UC18 - Accepter une\nlivraison" as UC18
+  usecase "UC19 - Confirmer la\nlivraison" as UC19
+}
+
+' ============================================
+' CAS D'UTILISATION - ADMINISTRATEUR
+' ============================================
+rectangle "Administrateur" {
+  usecase "UC20 - Gérer les comptes\nutilisateurs" as UC20
+  usecase "UC21 - Activer / désactiver\nun compte" as UC21
+  usecase "UC22 - Consulter les statistiques\nde la plateforme" as UC22
+  usecase "UC23 - Analyser les données\népidémiologiques" as UC23
+  usecase "UC24 - Supprimer un\ncompte utilisateur" as UC24
+}
+
+' ============================================
+' CAS D'UTILISATION - SYSTÈME
+' ============================================
+rectangle "Système" {
+  usecase "UC25 - Traitement OCR\ndes ordonnances" as UC25
+  usecase "UC26 - Recherche par\ngéolocalisation" as UC26
+  usecase "UC27 - Calcul de l'itinéraire\nde livraison" as UC27
+  usecase "UC28 - Réception notification\nde paiement Wave" as UC28
+  usecase "UC29 - Générer réponse\ndu chatbot IA" as UC29
+}
+
+' ============================================
+' ASSOCIATIONS ACTEUR - CAS D'UTILISATION
+' ============================================
+
+' Client
+Client --> UC01
+Client --> UC02
+Client --> UC03
+Client --> UC04
+Client --> UC05
+Client --> UC06
+Client --> UC07
+Client --> UC08
+Client --> UC10
+
+' Pharmacien
+Pharmacien --> UC11
+Pharmacien --> UC12
+Pharmacien --> UC13
+Pharmacien --> UC14
+Pharmacien --> UC15
+Pharmacien --> UC01
+
+' Livreur
+Livreur --> UC16
+Livreur --> UC17
+Livreur --> UC18
+Livreur --> UC19
+Livreur --> UC01
+
+' Administrateur
+Admin --> UC20
+Admin --> UC21
+Admin --> UC22
+Admin --> UC23
+Admin --> UC24
+Admin --> UC01
+
+' Systèmes externes
+WaveSystem --> UC28
+IASystem --> UC25
+IASystem --> UC29
+GoogleMaps --> UC26
+GoogleMaps --> UC27
+
+' Relations d'inclusion
+UC05 ..> UC25 : <<inclut>>
+UC02 ..> UC26 : <<inclut>>
+UC03 ..> UC26 : <<inclut>>
+UC04 ..> UC26 : <<inclut>>
+UC18 ..> UC27 : <<inclut>>
+UC19 ..> UC27 : <<inclut>>
+UC10 ..> UC29 : <<inclut>>
+
+' Relation d'extension
+UC09 -up-> UC07 : <<étend>> (optionnel après livraison)
+
+@enduml

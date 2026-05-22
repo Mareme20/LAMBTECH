@@ -1,0 +1,50 @@
+@startuml MEDS_Diagramme_Contexte
+top to bottom direction
+
+title MEDS - Diagramme de Contexte
+
+package "Plateforme MEDS" {
+  [API Backend MEDS\nExpress / TypeORM]
+  [Frontend MEDS\nReact / Leaflet]
+  [Base de données\nPostgreSQL]
+  [Cache Redis]
+  [Serveur Socket.IO]
+}
+
+package "Services Externes" {
+  [Wave Mobile Money\nPasserelle de paiement]
+  [API Google Maps\nGéolocalisation & Itinéraires]
+  [Google Gemini IA\nOCR & Chatbot]
+  [Tesseract.js\nMoteur OCR local]
+}
+
+package "Utilisateurs Finaux" {
+  [Clients]
+  [Pharmaciens]
+  [Livreurs]
+  [Administrateurs]
+}
+
+' ============================================
+' RELATIONS
+' ============================================
+
+Clients --> [Frontend MEDS] : Web / Mobile
+Pharmaciens --> [Frontend MEDS] : Portail Web
+Livreurs --> [Frontend MEDS] : Application Mobile
+Administrateurs --> [Frontend MEDS] : Tableau de bord Admin
+
+[Frontend MEDS] <--> [API Backend MEDS] : REST / Socket
+[API Backend MEDS] <--> [Base de données\nPostgreSQL] : Requêtes SQL
+[API Backend MEDS] <--> [Cache Redis] : Sessions / Cache
+[API Backend MEDS] <--> [Serveur Socket.IO] : Événements temps réel
+
+[Serveur Socket.IO] --> Clients : Notifications
+[Serveur Socket.IO] --> Livreurs : Suivi en direct
+
+[API Backend MEDS] <--> [Wave Mobile Money] : Webhooks de paiement
+[API Backend MEDS] <--> [API Google Maps] : Services géographiques
+[API Backend MEDS] <--> [Google Gemini IA] : Réponses IA
+[API Backend MEDS] <--> [Tesseract.js] : Traitement OCR
+
+@enduml

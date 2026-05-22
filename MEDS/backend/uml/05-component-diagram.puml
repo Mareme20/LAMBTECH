@@ -1,0 +1,133 @@
+@startuml MEDS_Diagramme_Composants
+skinparam componentStyle rectangle
+
+title MEDS - Architecture Composants Backend
+
+package "Application Express" {
+  [app.ts\nRoutes & Intergiciels]
+}
+
+package "Contrôleurs" {
+  [ContrôleurAuth]
+  [ContrôleurMedicament]
+  [ContrôleurPharmacie]
+  [ContrôleurStock]
+  [ContrôleurCommande]
+  [ContrôleurStatistiques]
+  [ContrôleurPaiement]
+  [ContrôleurIA]
+}
+
+package "Services" {
+  [ServiceAuth]
+  [ServiceMedicament]
+  [ServicePharmacie]
+  [ServiceStock]
+  [ServiceCommande]
+  [ServiceStatistiques]
+  [ServicePaiement]
+  [ServiceIA]
+}
+
+package "Dépôts" {
+  [IUtilisateurRepository]
+  [IMedicamentRepository]
+  [IPharmacieRepository]
+  [IStockRepository]
+  [ICommandeRepository]
+}
+
+package "Entités" {
+  [Utilisateur]
+  [Medicament]
+  [Pharmacie]
+  [Stock]
+  [Commande]
+  [ArticleCommande]
+}
+
+package "Intergiciels" {
+  [auth.middleware]
+  [role.middleware]
+  [validation.middleware]
+}
+
+package "Routes" {
+  [/api/auth/*]
+  [/api/medicaments/*]
+  [/api/pharmacies/*]
+  [/api/stocks/*]
+  [/api/commandes/*]
+  [/api/stats/*]
+  [/api/payment/*]
+  [/api/ai/*]
+}
+
+package "Intégrations Externes" {
+  [API Wave Payment]
+  [API Google Maps]
+  [Gemini IA]
+  [Tesseract OCR]
+}
+
+package "Infrastructure" {
+  [PostgreSQL\nTypeORM]
+  [Redis\nCache/Sessions]
+  [Socket.IO\nTemps réel]
+}
+
+' Routes vers Contrôleurs
+[/api/auth/*] --> [ContrôleurAuth]
+[/api/medicaments/*] --> [ContrôleurMedicament]
+[/api/pharmacies/*] --> [ContrôleurPharmacie]
+[/api/stocks/*] --> [ContrôleurStock]
+[/api/commandes/*] --> [ContrôleurCommande]
+[/api/stats/*] --> [ContrôleurStatistiques]
+[/api/payment/*] --> [ContrôleurPaiement]
+[/api/ai/*] --> [ContrôleurIA]
+
+' Contrôleurs vers Services
+[ContrôleurAuth] --> [ServiceAuth]
+[ContrôleurMedicament] --> [ServiceMedicament]
+[ContrôleurPharmacie] --> [ServicePharmacie]
+[ContrôleurStock] --> [ServiceStock]
+[ContrôleurCommande] --> [ServiceCommande]
+[ContrôleurStatistiques] --> [ServiceStatistiques]
+[ContrôleurPaiement] --> [ServicePaiement]
+[ContrôleurIA] --> [ServiceIA]
+
+' Services vers Dépôts
+[ServiceAuth] --> [IUtilisateurRepository]
+[ServiceMedicament] --> [IMedicamentRepository]
+[ServicePharmacie] --> [IPharmacieRepository]
+[ServiceStock] --> [IStockRepository]
+[ServiceCommande] --> [ICommandeRepository]
+
+' Dépôts vers Entités
+[IUtilisateurRepository] ..> [Utilisateur]
+[IMedicamentRepository] ..> [Medicament]
+[IPharmacieRepository] ..> [Pharmacie]
+[IStockRepository] ..> [Stock]
+[ICommandeRepository] ..> [Commande]
+
+' Intergiciels interceptent
+[auth.middleware] -up-> [app.ts]
+[role.middleware] -up-> [app.ts]
+[validation.middleware] -up-> [app.ts]
+
+' Intégrations Externes
+[ServiceIA] --> [Tesseract OCR]
+[ServiceIA] --> [Gemini IA]
+[ServicePaiement] --> [API Wave Payment]
+[ServicePharmacie] --> [API Google Maps]
+[ServiceMedicament] --> [API Google Maps]
+[ServiceStock] --> [API Google Maps]
+
+' Connexions Infrastructure
+[ServiceAuth] --> [Redis]
+[ServicePaiement] --> [PostgreSQL]
+[tous les Dépôts] --> [PostgreSQL]
+
+[app.ts] --> [Socket.IO]
+
+@enduml

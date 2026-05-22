@@ -1,0 +1,99 @@
+@startuml MEDS_Séquence_Connexion_Commande
+title Séquence : Connexion et Passage de Commande
+
+actor Client
+participant "Frontend" as FE
+participant "API Backend" as BE
+database "PostgreSQL" as DB
+database "Redis" as REDIS
+participant "Wave" as WAVE
+participant "Gemini IA" as GEMINI
+actor "Pharmacien" as PHARMA
+actor "Livreur" as LIVREUR
+
+== 1. Authentification ==
+
+Client -> FE : Page de connexion
+FE -> BE : POST /api/auth/connexion {email, motDePasse}
+BE -> DB : Vérifier identifiants utilisateur
+DB -> BE : Données utilisateur
+BE -> REDIS : Créer session JWT
+REDIS -> BE : Jeton JWT
+BE -> FE : {token, utilisateur}
+FE -> Client : Redirection vers tableau de bord
+
+== 2. Recherche de médicament ==
+
+Client -> FE : Recherche "Doliprane"
+FE -> BE : GET /api/medicaments?recherche=Doliprane
+BE -> DB : SELECT medicaments WHERE nom LIKE '%Doliprane%'
+DB -> BE : Liste médicaments
+BE -> FE : Résultats
+FE -> Client : Afficher carte pharmacies avec stock
+
+== 3. Scan ordonnance (optionnel) ==
+
+Client -> FE : Upload photo ordonnance
+FE -> BE : POST /api/ai/scan (multipart)
+BE -> GEMINI : Analyse image ordonnance\navec Gemini IA (vision)
+BE -> FE : Médicaments détectés
+FE -> Client : Liste médicaments reconnus
+
+== 4. Création commande ==
+
+Client -> FE : Sélectionne pharmacy + articles
+FE -> BE : POST /api/commandes {articles}
+BE -> DB : DÉBUT TRANSACTION
+BE -> DB : INSERT Commande
+BE -> DB : INSERT ArticlesCommande
+BE -> DB : UPDATE Stock (quantite -)
+BE -> DB : VALIDATION
+BE -> FE : Commande créée + ID
+FE -> Client : Page de paiement
+
+== 5. Paiement Wave ==
+
+Client -> FE : Clic "Payer avec Wave"
+FE -> WAVE : Redirection paiement
+WAVE -> FE : Page paiement Wave
+Client -> WAVE : Saisie numéro mobile
+WAVE -> WAVE : Traitement paiement
+
+alt Paiement accepté
+    WAVE -> BE : POST /api/payment/wave/webhook\n{transactionId, statut: SUCCÈS}
+    BE -> DB : UPDATE Commande SET statut = ACCEPTEE
+    BE -> PHARMA : Notification Socket.IO
+else Paiement refusé
+    WAVE -> BE : POST /webhook\n{statut: ÉCHEC}
+    BE -> DB : UPDATE Commande SET statut = ANNULEE
+    FE -> Client : Erreur de paiement
+end
+
+== 6. Préparation commande ==
+
+PHARMA -> FE : Voir commande en attente
+FE -> PHARMA : Interface pharmacien
+PHARMA -> FE : Accepte commande
+FE -> BE : PUT /api/commandes/{id}/statut {statut: EN_PREPARATION}
+BE -> DB : MISE À JOUR
+BE -> LIVREUR : Notification nouvelle livraison
+
+== 7. Livraison ==
+
+LIVREUR -> FE : Accepte livraison
+FE -> BE : PUT /api/commandes/{id}/affecter\n{livreurId}
+BE -> DB : MISE À JOUR Commande
+BE -> LIVREUR : Socket.IO demande position
+
+loop Toutes les 30 secondes
+    LIVREUR -> FE : Position GPS
+    FE -> BE : PUT /api/livreur/position\n{lat, lng}
+    BE -> Client : Mise à jour suivi
+end
+
+LIVREUR -> FE : Marque comme livrée
+FE -> BE : PUT /api/commandes/{id}/statut\n{statut: LIVREE}
+BE -> DB : MISE À JOUR
+BE -> Client : Notification "Colis livré !"
+
+@enduml
