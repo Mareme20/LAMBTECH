@@ -39,4 +39,37 @@ export class AuthController {
       });
     }
   }
+
+  async getAllUsers(req: Request, res: Response) {
+    try {
+      const users = await this.service.getAllUsers();
+      return res.status(200).json(users);
+    } catch (error: any) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+  async toggleStatus(req: Request, res: Response) {
+    try {
+      const raw = req.params.id;
+      const idStr = Array.isArray(raw) ? raw[0] : raw;
+      const id = parseInt(String(idStr ?? "0"), 10);
+      const result = await this.service.toggleStatus(id);
+      return res.status(200).json(result);
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async deleteUser(req: Request, res: Response) {
+    try {
+      const raw = req.params.id;
+      const idStr = Array.isArray(raw) ? raw[0] : raw;
+      const id = parseInt(String(idStr ?? "0"), 10);
+      await this.service.deleteUser(id);
+      return res.status(200).json({ success: true });
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
 }

@@ -4,6 +4,9 @@ from "express";
 import { StockService }
 from "../service/stock.service";
 
+import { AuthRequest }
+from "../../../middlewares/auth.middleware";
+
 export class StockController {
 
   private service =
@@ -52,12 +55,20 @@ export class StockController {
   }
 
   async findAll(
-    req: Request,
+    req: AuthRequest,
     res: Response
   ) {
+    // Si c'est un pharmacien, on force le filtrage par SA pharmacie
+    // Si c'est un admin, pharmacieId sera undefined et il verra tout
+    const pharmacieId = req.user?.role === 'PHARMACIE' ? req.user?.pharmacieId : undefined;
+
+    // Sécurité supplémentaire : si pharmacien mais pas de pharmacieId lié, on ne renvoie rien
+    if (req.user?.role === 'PHARMACIE' && !pharmacieId) {
+      return res.json([]);
+    }
 
     const result =
-      await this.service.findAll();
+      await this.service.findAll(pharmacieId);
 
     return res.json(result);
   }

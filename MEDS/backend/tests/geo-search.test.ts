@@ -21,11 +21,11 @@ describe("Geospatial Search Test", () => {
     }
   });
 
-  it("should find pharmacies within a 5km radius with stock", async () => {
+  it("should find pharmacies within a 5km radius with stock by medicamentId", async () => {
     // Coordonnées de test (Dakar Plateau par exemple)
-    const lat = 14.667;
-    const lon = -17.433;
-    const medicamentId = 1; // Supposons que cet ID existe
+    const lat = 14.7167;
+    const lon = -17.4677;
+    const medicamentId = 1;
     const rayon = 5;
 
     const results = await pharmacieRepo.findWithStockAndDistance(lat, lon, medicamentId, rayon);
@@ -33,7 +33,21 @@ describe("Geospatial Search Test", () => {
     expect(Array.isArray(results)).toBe(true);
     if (results.length > 0) {
       expect(Number(results[0].distance_km)).toBeLessThanOrEqual(rayon);
-      expect(results[0].stock_disponible).toBeGreaterThan(0);
+      expect(results[0].stock_quantite).toBeGreaterThan(0);
+    }
+  });
+
+  it("should find pharmacies by medication name", async () => {
+    const lat = 14.7167;
+    const lon = -17.4677;
+    const searchTerm = "Paracétamol";
+    const rayon = 10;
+
+    const results = await pharmacieRepo.findWithStockAndDistance(lat, lon, undefined, rayon, searchTerm);
+    
+    expect(Array.isArray(results)).toBe(true);
+    if (results.length > 0) {
+      expect(results[0].medicament_nomCommercial).toMatch(/Paracétamol/i);
     }
   });
 });

@@ -14,6 +14,15 @@ export class MedicamentRepository {
     return await this.repository.save(data);
   }
 
+  async update(id: number, data: Partial<Medicament>) {
+    await this.repository.update(id, data);
+    return this.findById(id);
+  }
+
+  async delete(id: number) {
+    return await this.repository.delete(id);
+  }
+
   async findAll() {
     return await this.repository.find();
   }

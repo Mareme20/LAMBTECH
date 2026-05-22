@@ -5,19 +5,22 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl && !(process.env.DB_HOST && process.env.DB_USERNAME && process.env.DB_NAME)) {
+  // exactOptionalPropertyTypes: true => évite string | undefined
+  console.warn("⚠️ DATABASE_URL manquant. Assurez-vous que DB_HOST/DB_USERNAME/DB_PASSWORD/DB_NAME sont définis.");
+}
 
 export const AppDataSource = new DataSource({
   type: "postgres",
 
-  // Prefer DATABASE_URL (docker-compose sets it), and fall back to DB_* vars.
-  // This avoids passing `undefined` to pg as the password.
-  url: databaseUrl,
+// Prefer DATABASE
 
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || "5432"),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.DB_HOST ?? "localhost",
+  port: parseInt(process.env.DB_PORT ?? "5432"),
+  username: process.env.DB_USERNAME ?? "",
+  password: process.env.DB_PASSWORD ?? "",
+  database: process.env.DB_NAME ?? "",
+
 
   synchronize: process.env.NODE_ENV !== "production",
   logging: process.env.NODE_ENV === "development",

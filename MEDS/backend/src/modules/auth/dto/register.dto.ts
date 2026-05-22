@@ -6,4 +6,5 @@ export class RegisterDto {
   email!: string;
   motDePasse!: string;
   role!: Role;
+  pharmacieId?: number;
 }

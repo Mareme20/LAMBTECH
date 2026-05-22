@@ -31,6 +31,12 @@ export class User {
   })
   role!: Role;
 
+  @Column("boolean", { default: true })
+  estActif!: boolean;
+
+  @Column("int", { nullable: true })
+  pharmacieId!: number;
+
   @Column("varchar", { nullable: true })
   adresseDefaut!: string;
 

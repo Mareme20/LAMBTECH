@@ -26,13 +26,21 @@ export class CommandeRepository {
     );
   }
 
-  async findAll() {
+  async findAll(pharmacieId?: number, patientId?: number, livreurId?: number) {
+    const where: any = {};
+    if (pharmacieId) where.pharmacieId = pharmacieId;
+    if (patientId) where.patientId = patientId;
+    if (livreurId) where.livreurId = livreurId;
 
     return await this.repository.find({
+      where,
       relations: [
         "patient",
         "pharmacie",
+        "items",
+        "items.medicament"
       ],
+      order: { dateCommande: 'DESC' }
     });
   }
 
@@ -43,6 +51,8 @@ export class CommandeRepository {
       relations: [
         "patient",
         "pharmacie",
+        "items",
+        "items.medicament"
       ],
     });
   }
@@ -55,6 +65,13 @@ export class CommandeRepository {
     await this.repository.update(
       { id },
       { statut: statut as any }
+    );
+  }
+
+  async assignLivreur(id: number, livreurId: number) {
+    await this.repository.update(
+      { id },
+      { livreurId }
     );
   }
 }

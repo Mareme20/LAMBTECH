@@ -39,9 +39,10 @@ export class StockRepository {
     );
   }
 
-  async findAll() {
-
+  async findAll(pharmacieId?: number) {
+    const where = pharmacieId ? { pharmacieId } : {};
     return await this.repository.find({
+      where,
       relations: [
         "pharmacie",
         "medicament",
@@ -61,7 +62,7 @@ export class StockRepository {
         p.nom AS pharmacie,
         p.adresse,
         p.telephone,
-        m.nom_commercial,
+        m."nomCommercial",
         s.quantite,
 
         ST_DistanceSphere(
@@ -81,7 +82,7 @@ export class StockRepository {
       ON s."medicamentId" = m.id
 
       WHERE
-      LOWER(m.nom_commercial)
+LOWER(m."nomCommercial")
       LIKE LOWER($3)
 
       AND s.quantite > 0
