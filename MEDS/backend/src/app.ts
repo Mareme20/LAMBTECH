@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.js";
 import medicamentRoutes from "./modules/medicament/routes/medicament.route";
 import authRoutes from "./modules/auth/routes/auth.routes";
 import pharmacieRoutes from "./modules/pharmacie/routes/pharmacie.routes";
@@ -26,5 +28,8 @@ app.use("/api/commandes", commandeRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/ai", aiRoutes);
+
+// Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 export default app;

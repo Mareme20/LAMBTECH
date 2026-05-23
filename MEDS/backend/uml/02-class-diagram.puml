@@ -1,0 +1,183 @@
+@startuml MEDS_Diagramme_Classes
+skinparam componentStyle rectangle
+
+' ============================================
+' PACKAGES
+' ============================================
+
+package "Entités" {
+  class Utilisateur {
+    - id: number
+    - email: string
+    - nom: string
+    - prenom: string
+    - telephone: string
+    - motDePasse: string
+    - role: Role
+    - estActif: boolean
+    - dateCreation: DateTime
+  }
+
+  class Medicament {
+    - id: number
+    - nomCommercial: string
+    - molecule: string
+    - forme: string
+    - prixUnitaire: number
+    - description: string
+    - imageUrl: string
+  }
+
+  class Pharmacie {
+    - id: number
+    - nom: string
+    - telephone: string
+    - adresse: string
+    - latitude: number
+    - longitude: number
+    - estDeGarde: boolean
+    - statutActivation: boolean
+    - heureOuverture: string
+    - heureFermeture: string
+    - localisation: string
+    - dateCreation: DateTime
+  }
+
+  class Stock {
+    - quantite: number
+    - derniereMaj: DateTime
+  }
+
+  class Commande {
+    - id: number
+    - statut: StatutCommande
+    - montantTotal: number
+    - dateCreation: DateTime
+  }
+
+  class ArticleCommande {
+    - quantite: number
+    - prixUnitaire: number
+  }
+
+  class JournalRecherche {
+    - id: number
+    - requete: string
+    - horodatage: DateTime
+  }
+
+  class PositionLivreur {
+    - id: number
+    - latitude: number
+    - longitude: number
+    - horodatage: DateTime
+  }
+}
+
+package "Énumérations" {
+  enum Role {
+    CLIENT
+    PHARMACIEN
+    LIVREUR
+    ADMINISTRATEUR
+  }
+
+  enum StatutCommande {
+    EN_ATTENTE
+    ACCEPTEE
+    EN_PREPARATION
+    EXPEDIEE
+    LIVREE
+    ANNULEE
+  }
+}
+
+package "DTOs" {
+  class ConnexionDto {
+    - email: string
+    - motDePasse: string
+  }
+
+  class InscriptionDto {
+    - email: string
+    - motDePasse: string
+    - nom: string
+    - prenom: string
+    - role: Role
+    - telephone: string
+  }
+
+  class CreationMedicamentDto {
+    - nomCommercial: string
+    - molecule: string
+    - forme: string
+    - prixUnitaire: number
+    - description: string
+  }
+
+  class CreationPharmacieDto {
+    - nom: string
+    - adresse: string
+    - latitude: number
+    - longitude: number
+    - telephone: string
+    - estDeGarde: boolean
+    - heureOuverture: string
+    - heureFermeture: string
+  }
+
+  class CreationStockDto {
+    - pharmacieId: number
+    - medicamentId: number
+    - quantite: number
+  }
+
+  class ModificationStockDto {
+    - quantite: number
+  }
+
+  class CreationCommandeDto {
+    - patientId: number
+    - pharmacieId: number
+    - articles: ArticleCommandeDto[]
+  }
+
+  class ArticleCommandeDto {
+    - medicamentId: number
+    - quantite: number
+  }
+
+  class ModificationStatutDto {
+    - statut: StatutCommande
+  }
+}
+
+' ============================================
+' RELATIONS
+' ============================================
+
+Utilisateur --> Role : «énumération»
+Commande --> StatutCommande : «énumération»
+
+Pharmacie "1" --> "*" Stock : gère
+Pharmacie "1" --> "*" Commande : reçoit
+Pharmacie "1" --> "*" Utilisateur : emploie (pharmaciens)
+
+Medicament "1" --> "*" Stock : est stocké dans
+Medicament "1" --> "*" ArticleCommande : contient
+
+Stock "*" --> "1" Pharmacie : dans pharmacie
+Stock "*" --> "1" Medicament : pour médicament
+
+Commande "1" --> "1..*" ArticleCommande : comprend
+Commande "1" --> "1" Utilisateur : passée par (client)
+Commande "*" --> "1..*" Utilisateur : assignée à (livreur)
+
+ArticleCommande "*" --> "1" Medicament : référence
+ArticleCommande "*" --> "1" Commande : appartient à
+
+PositionLivreur "1" --> "1" Utilisateur : appartient à (livreur)
+
+JournalRecherche "1" --> "1" Medicament : déclenché par recherche de
+
+@enduml

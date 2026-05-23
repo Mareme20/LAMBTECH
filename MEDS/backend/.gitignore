@@ -4,8 +4,7 @@ node_modules/
 # Build outputs
 dist/
 build/
-
-# Logs
+ # Logs
 logs/
 *.log
 

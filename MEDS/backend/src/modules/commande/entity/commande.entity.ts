@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  OneToMany,
   CreateDateColumn,
 } from "typeorm";
 
@@ -15,6 +16,9 @@ from "../../pharmacie/entity/pharmacie.entity";
 
 import { OrderStatus }
 from "../../../shared/enums/order-status.enum";
+
+import { CommandeItem }
+from "./commande-item.entity";
 
 @Entity("commandes")
 export class Commande {
@@ -58,4 +62,7 @@ export class Commande {
 
   @CreateDateColumn()
   dateCommande!: Date;
+
+  @OneToMany(() => CommandeItem, (item) => item.commande, { cascade: true })
+  items!: CommandeItem[];
 }
