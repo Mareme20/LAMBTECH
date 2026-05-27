@@ -1,17 +1,17 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
- "compilerOptions": {
+  "compilerOptions": {
     "target": "ES2020",
     "module": "esnext",
     "rootDir": "./src",
     "outDir": "./dist",
-     "experimentalDecorators": true,
+    "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
- 
+
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    
+
     "types": ["node"],
     "lib": ["esnext"],
 
@@ -39,8 +39,10 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-     "skipLibCheck": true,
+    "skipLibCheck": true,
     "ignoreDeprecations": "6.0"
   },
-
+  "include": ["src/**/*.ts"],
+  "exclude": ["tests", "node_modules", "dist"]
 }
+

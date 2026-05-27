@@ -15,11 +15,24 @@ export class PaymentController {
       return res.status(401).json({ message: "Signature invalide" });
     }
 
-    // Dans une intégration réelle, on extrairait l'ID de la commande du payload Wave
-    const { order_id } = req.body;
+    const event = req.body;
+    
+    // Détection du succès de paiement de la session Wave Checkout
+    if (event && event.type === "checkout.session.completed") {
+      const orderId = Number(event.data.client_reference_id);
 
-    if (order_id) {
-      await this.commandeService.updateStatus(Number(order_id), { statut: "payée" } as any);
+      if (orderId) {
+        console.log(`[Webhook Wave] Paiement confirmé pour la commande n°${orderId}`);
+
+        try {
+          // CORRECTION : On appelle la bonne méthode existante et on passe le format DTO attendu
+          await this.commandeService.updateStatus(orderId, { statut: "PAYEE" as any });
+          
+          return res.json({ received: true });
+        } catch (error) {
+          console.error("[Webhook Wave] Échec de la mise à jour du statut :", error);
+        }
+      }
     }
 
     return res.json({ received: true });

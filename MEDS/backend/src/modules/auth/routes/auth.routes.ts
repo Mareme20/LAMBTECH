@@ -17,4 +17,19 @@ router.post(
   controller.login.bind(controller)
 );
 
+router.get(
+  "/users",
+  controller.getAllUsers.bind(controller)
+);
+
+router.put(
+  "/users/:id/toggle-status",
+  controller.toggleStatus.bind(controller)
+);
+
+router.delete(
+  "/users/:id",
+  controller.deleteUser.bind(controller)
+);
+
 export default router;

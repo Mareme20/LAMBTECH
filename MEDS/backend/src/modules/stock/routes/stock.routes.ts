@@ -37,6 +37,7 @@ router.put(
 
 router.get(
   "/",
+  authMiddleware,
   controller.findAll.bind(controller)
 );
 

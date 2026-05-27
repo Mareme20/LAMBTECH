@@ -6,6 +6,9 @@ import { WaveService } from "../../../utils/WaveService";
 import { DeliveryService } from "../../../utils/DeliveryService";
 import { PharmacieRepository } from "../../pharmacie/repository/impl/pharmacie.repository";
 import { OrderStatus } from "../../../shared/enums/order-status.enum";
+import { AppDataSource } from "../../../database/data-source";
+import { Commande } from "../entity/commande.entity";
+import { CommandeItem } from "../entity/commande-item.entity";
 
 export class CommandeService {
   private repository = new CommandeRepository();
@@ -14,25 +17,60 @@ export class CommandeService {
   private pharmacieRepository = new PharmacieRepository();
 
   async create(data: CreateCommandeDto) {
-    const commande = await this.repository.create(data as any);
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Génération du lien de paiement Wave
-    const payment = await this.waveService.createPaymentSession(
-      commande.montantTotal,
-      commande.id
-    );
+    try {
+      // 1. Créer la commande
+      const commande = new Commande();
+      commande.patientId = data.patientId;
+      commande.pharmacieId = data.pharmacieId;
+      commande.montantTotal = data.montantTotal;
+      commande.statut = OrderStatus.EN_ATTENTE;
 
-    const io = getIO();
-    io.emit("nouvelle_commande", commande);
+      const savedCommande = await queryRunner.manager.save(commande);
 
-    return {
-      ...commande,
-      payment_url: payment.payment_url,
-    };
+      // 2. Créer les items
+      if (data.items && data.items.length > 0) {
+        const items = data.items.map(item => {
+          const ci = new CommandeItem();
+          ci.commandeId = savedCommande.id;
+          ci.medicamentId = item.medicamentId;
+          ci.quantite = item.quantite;
+          ci.prixUnitaire = item.prixUnitaire;
+          return ci;
+        });
+        await queryRunner.manager.save(items);
+      }
+
+      await queryRunner.commitTransaction();
+
+      // Génération du lien de paiement Wave
+      const payment = await this.waveService.createPaymentSession(
+        savedCommande.montantTotal,
+        savedCommande.id
+      );
+
+      const io = getIO();
+      // On recharge la commande avec ses relations pour l'event socket
+      const fullCommande = await this.repository.findById(savedCommande.id);
+      io.emit("nouvelle_commande", fullCommande);
+
+      return {
+        ...savedCommande,
+        payment_url: payment.payment_url,
+      };
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
-  async findAll() {
-    return await this.repository.findAll();
+  async findAll(pharmacieId?: number, patientId?: number, livreurId?: number) {
+    return await this.repository.findAll(pharmacieId, patientId, livreurId);
   }
 
   async findById(id: number) {
@@ -54,6 +92,9 @@ export class CommandeService {
           );
           if (livreur) {
             console.log(`[Delivery] Commande ${id} assignée au livreur ${livreur.livreurId}`);
+            // Update the order with the livreurId
+            await this.repository.assignLivreur(id, livreur.livreurId);
+            
             const io = getIO();
             io.emit("course_assignee", {
               commandeId: id,

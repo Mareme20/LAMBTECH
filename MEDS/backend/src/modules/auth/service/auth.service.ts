@@ -10,7 +10,6 @@ export class AuthService {
   private repository = new UserRepository();
 
   async register(data: RegisterDto) {
-
     const userExists =
       await this.repository.findByEmail(data.email);
 
@@ -21,8 +20,45 @@ export class AuthService {
     const hashedPassword =
       await bcrypt.hash(data.motDePasse, 10);
 
+    // Admin flow: when a PHARMACIE user is created without pharmacieId,
+    // auto-create a default Pharmacie at Dakar and bind user.pharmacieId.
+    let pharmacieId: number | undefined = data.pharmacieId;
+
+    if (data.role === "PHARMACIE" && !pharmacieId) {
+      const { Pharmacie } = await import(
+        "../../pharmacie/entity/pharmacie.entity"
+      );
+      const { PharmacieRepository } = await import(
+        "../../pharmacie/repository/impl/pharmacie.repository"
+      );
+
+      const pharmacieRepo = new PharmacieRepository();
+
+      // Default Dakar pharmacy (generic)
+      const defaultPharmacie = pharmacieRepo.create({
+        nom: "Pharmacie (Auto) Dakar",
+        telephone: "+221000000000",
+        adresse: "Dakar",
+        latitude: 14.7167,
+        longitude: -17.4677,
+        estDeGarde: false,
+        statutActivation: true,
+        heureOuverture: "08:00",
+        heureFermeture: "22:00",
+        // localisation handled by service normally; repository.save accepts extra fields
+        localisation: `SRID=4326;POINT(${ -17.4677 } ${ 14.7167 })`,
+      } as any);
+
+      const created = await pharmacieRepo.create(
+        (await defaultPharmacie) as any
+      );
+
+      pharmacieId = created.id;
+    }
+
     const user = {
       ...data,
+      pharmacieId,
       motDePasse: hashedPassword,
     };
 
@@ -51,6 +87,7 @@ export class AuthService {
       {
         id: user.id,
         role: user.role,
+        pharmacieId: user.pharmacieId,
       },
       process.env.JWT_SECRET as string,
       {
@@ -60,12 +97,41 @@ export class AuthService {
 
     return {
       token,
-      utilisateur: {
+      user: {
         id: user.id,
         nom: user.nomComplet,
         email: user.email,
         role: user.role,
+        pharmacieId: user.pharmacieId,
       },
     };
+  }
+
+  async getAllUsers() {
+    const users = await this.repository.findAll();
+    return users.map(u => ({
+      id: u.id,
+      nom: u.nomComplet,
+      email: u.email,
+      role: u.role,
+      telephone: u.telephone,
+      estActif: u.estActif
+    }));
+  }
+
+  async toggleStatus(id: number) {
+    const user = await this.repository.findById(id);
+    if (!user) throw new Error("Utilisateur introuvable");
+    
+    user.estActif = !user.estActif;
+    await this.repository.create(user); // repository.create handles save
+    
+    console.log(`[Admin] Statut de l'utilisateur ${id} basculé à ${user.estActif}.`);
+    return { success: true, estActif: user.estActif };
+  }
+
+  async deleteUser(id: number) {
+    await this.repository.delete(id);
+    return { success: true };
   }
 }

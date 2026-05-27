@@ -34,9 +34,8 @@ export class StockService {
     );
   }
 
-  async findAll() {
-
-    return await this.repository.findAll();
+  async findAll(pharmacieId?: number) {
+    return await this.repository.findAll(pharmacieId);
   }
 
   async searchMedication(

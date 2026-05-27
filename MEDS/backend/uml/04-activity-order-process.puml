@@ -1,0 +1,92 @@
+@startuml MEDS_Activité_Processus_Commande
+title Flux : Passage d'une commande
+
+start
+
+:Nouveau client se connecte **OU** existant;
+if (Première connexion ?) then (oui)
+  :Inscription avec rôle,\nemail, mot de passe;
+  :Validation email;
+endif
+
+:Recherche médicament par nom\nou scanne ordonnance OCR;
+note right
+  OCR via Tesseract.js
+  ou Recherche texte
+end note
+
+partition "Localisation" {
+  :Détection position GPS\ndu client;
+  :Calcul pharmacies dans\nrayon 5km;
+}
+
+:Raffichage carte avec\npharmacies et leurs stocks;
+
+if (Médicament disponible ?) then (non)
+  :Message "Stock épuisé\ndans cette zone";
+  stop
+else (oui)
+endif
+
+:Sélection de la pharmacy;
+
+:Ajout articles au panier;
+
+partition "Paiement" {
+  :Redirection vers Wave;
+  :Saisie numéro mobile;
+  :Confirmation OTP;
+}
+
+if (Paiement validé ?) then (non)
+  :Annulation commande;
+  :Remboursement si déjà prélevé;
+  stop
+else (oui)
+endif
+
+:Commande créée avec\nstatut EN_ATTENTE;
+
+fork
+  :Notification\nPharmacien;
+  :Accepte la commande;
+fork again
+  :Paiement enregistré\nen base;
+end fork
+
+:Statut → ACCEPTEE;
+
+:Pharmacien prépare\nla commande;
+:Statut → EN_PREPARATION;
+
+if (Livreur disponible ?) then (non)
+  :Attente d'allocation;
+  :Notification pool\nde livreurs;
+else (oui)
+endif
+
+:Livreur récupère\nla commande;
+:Statut → EXPEDIEE;
+
+partition "Livraison" {
+  :Suivi GPS en temps réel;
+  :Envoi position au client\nevery 30s;
+}
+
+if (Colis reçu ?) then (non)
+  :Relance client;
+  if (Délai > 30min ?) then (oui)
+    :Signalement problème;
+    :Intervention admin;
+  endif
+else (oui)
+endif
+
+:Client confirme réception;
+:Statut → LIVREE;
+
+:Journalisation recherche\npour statistiques;
+
+stop
+
+@enduml

@@ -31,4 +31,16 @@ export class UserRepository {
       where: { telephone },
     });
   }
+
+  async findAll(): Promise<User[]> {
+    return await this.repository.find();
+  }
+
+  async findById(id: number): Promise<User | null> {
+    return await this.repository.findOne({ where: { id } });
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.repository.delete(id);
+  }
 }

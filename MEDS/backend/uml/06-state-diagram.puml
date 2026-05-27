@@ -1,0 +1,51 @@
+@startuml MEDS_Diagramme_Etats
+title Diagramme d'états - Commande
+
+[*] --> en_attente
+en_attente --> acceptee : Pharmacien accepte
+en_attente --> annulee : Paiement échoue / Délai dépassé
+
+acceptee --> en_preparation : Pharmacien commence la préparation
+acceptee --> annulee : Pharmacien refuse (stock épuisé)
+
+en_preparation --> expadiee : Livreur récupère le colis
+
+expadiee --> livree : Livraison confirmée par le client
+expadiee --> annulee : Échec livraison (absence client > 3x)
+
+livree --> [*]
+annulee --> [*]
+
+note top of en_attente
+En attente de paiement Wave
+Vérification stock disponible
+Notification pharmacien
+end note
+
+note top of acceptee
+Réservation du stock
+Attribution livreur en attente
+end note
+
+note top of en_preparation
+Mise à jour du décompte
+Estimation temps restant
+end note
+
+note top of expadiee
+Suivi GPS actif
+Notifications régulières au client
+end note
+
+note top of livree
+Confirmation de réception
+Déblocage paiement au pharmacien
+Journalisation pour statistiques
+end note
+
+note top of annulee
+Libération réservation stock
+Processus remboursement si nécessaire
+end note
+
+@enduml
