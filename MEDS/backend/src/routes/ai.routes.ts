@@ -17,5 +17,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.post("/scan", upload.single("prescription"), controller.scanPrescription.bind(controller));
 router.post("/chat", controller.chat.bind(controller));
+router.get("/alerts", controller.getEpidemicAlerts.bind(controller));
 
 export default router;

@@ -9,6 +9,10 @@ import { Stock } from "../../modules/stock/entity/stock.entity.js";
 import { SearchLog } from "../../modules/stats/entity/search_log.entity.js";
 import { LivreurPosition } from "../../modules/geolocalisation/entity/livreur_positions.js";
 
+import { Commande } from "../../modules/commande/entity/commande.entity.js";
+import { CommandeItem } from "../../modules/commande/entity/commande-item.entity.js";
+import { OrderStatus } from "../../shared/enums/order-status.enum.js";
+
 function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -108,6 +112,7 @@ async function seedPharmacies() {
   const listToSeed = [
     {
       nom: "Pharmacie Nation (Centrale)",
+      zone: "Plateau",
       adresse: "Place de l'Indépendance, Dakar Plateau",
       telephone: "+221338232425",
       latitude: 14.6698,
@@ -120,6 +125,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie de la Médina",
+      zone: "Médina",
       adresse: "Avenue Blaise Diagne, Médina",
       telephone: "+221338221144",
       latitude: 14.6812,
@@ -132,6 +138,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Cheikh Anta Diop",
+      zone: "Fann",
       adresse: "Avenue Cheikh Anta Diop, face Université Fann",
       telephone: "+221338253030",
       latitude: 14.6901,
@@ -144,6 +151,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Atlantique Ouakam",
+      zone: "Ouakam",
       adresse: "Route de la Corniche Ouest, Ouakam",
       telephone: "+221338201015",
       latitude: 14.7234,
@@ -156,6 +164,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie des Almadies",
+      zone: "Almadies",
       adresse: "Route des Almadies, Ngor",
       telephone: "+221338204545",
       latitude: 14.7472,
@@ -168,6 +177,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie ZAC MBAO",
+      zone: "Mbao",
       adresse: "ZAC Mbao, Cité Marine Française, face Route Nationale",
       telephone: "+221338972758",
       latitude: 14.7432,
@@ -180,6 +190,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Sicap Mbao",
+      zone: "Mbao",
       adresse: "Sicap Mbao N° 315 Ts",
       telephone: "+221338345246",
       latitude: 14.7455,
@@ -192,6 +203,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Petit Mbao",
+      zone: "Mbao",
       adresse: "Mame Venus Ciss, Petit Mbao Extension N°86",
       telephone: "+221338366656",
       latitude: 14.7389,
@@ -204,6 +216,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Fass Mbao",
+      zone: "Mbao",
       adresse: "Km 18 Route de Rufisque, Fass Mbao",
       telephone: "+221338349313",
       latitude: 14.7502,
@@ -216,6 +229,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Dioma Keur Massar",
+      zone: "Keur Massar",
       adresse: "755 Cité Aïnoumady, Keur Massar",
       telephone: "+221338377575",
       latitude: 14.7810,
@@ -228,6 +242,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Fatou Badji",
+      zone: "Keur Massar",
       adresse: "Keur Massar Unité 14 n° 4",
       telephone: "+221338781532",
       latitude: 14.7865,
@@ -240,6 +255,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Golf Guédiawaye",
+      zone: "Guédiawaye",
       adresse: "Quartier Golf Sud, Guédiawaye",
       telephone: "+221338357070",
       latitude: 14.7612,
@@ -252,6 +268,7 @@ async function seedPharmacies() {
     },
     {
       nom: "Pharmacie Parcelles Assainies",
+      zone: "Parcelles Assainies",
       adresse: "Unité 14, Parcelles Assainies",
       telephone: "+221338351212",
       latitude: 14.7521,
@@ -265,11 +282,13 @@ async function seedPharmacies() {
   ];
 
   for (const p of listToSeed) {
-    const exists = await repo.findOne({ where: { nom: p.nom } });
-    if (!exists) {
-      const ph = repo.create(p as any);
-      await repo.save(ph);
+    let pharmacie = await repo.findOne({ where: { nom: p.nom } });
+    if (!pharmacie) {
+      pharmacie = repo.create(p as any);
+    } else {
+      repo.merge(pharmacie, p as any);
     }
+    await repo.save(pharmacie);
   }
 }
 
@@ -298,6 +317,61 @@ async function seedStocks() {
         await stockRepo.save(stock);
       }
     }
+  }
+}
+
+async function seedCommandes() {
+  const commRepo = AppDataSource.getRepository(Commande);
+  const itemRepo = AppDataSource.getRepository(CommandeItem);
+  const userRepo = AppDataSource.getRepository(User);
+  const pharmacieRepo = AppDataSource.getRepository(Pharmacie);
+  const medicRepo = AppDataSource.getRepository(Medicament);
+
+  const patients = await userRepo.find({ where: { role: Role.PATIENT } as any });
+  const pharmacies = await pharmacieRepo.find();
+  const meds = await medicRepo.find();
+
+  if (patients.length === 0 || pharmacies.length === 0 || meds.length === 0) return;
+
+  // Generate data for the last 30 days
+  for (let i = 0; i < 200; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - randInt(0, 30));
+
+    const patient = pick(patients);
+    const pharmacie = pick(pharmacies);
+
+    const commande = commRepo.create({
+      patientId: (patient as any).id,
+      pharmacieId: (pharmacie as any).id,
+      statut: OrderStatus.LIVRE,
+      montantTotal: 0,
+      dateCommande: date,
+    } as any);
+
+    const savedComm = await commRepo.save(commande);
+
+    // Add 1-3 items per order
+    let total = 0;
+    const numItems = randInt(1, 3);
+    for (let j = 0; j < numItems; j++) {
+      const med = pick(meds);
+      const quantite = randInt(1, 5);
+      const prix = (med as any).prixUnitaire || randInt(1000, 5000);
+      
+      const item = itemRepo.create({
+        commandeId: (savedComm as any).id,
+        medicamentId: (med as any).id,
+        quantite: quantite,
+        prixUnitaire: prix,
+      } as any);
+      
+      await itemRepo.save(item);
+      total += prix * quantite;
+    }
+
+    savedComm.montantTotal = total;
+    await commRepo.save(savedComm);
   }
 }
 
@@ -345,10 +419,11 @@ async function main() {
   await seedMedicaments();
   await seedPharmacies();
   await seedStocks();
+  await seedCommandes();
   await seedLivreursPositions();
   await seedSearchLogs();
 
-  console.log("✅ Seed data completed with Dakar Pharmacies network");
+  console.log("✅ Seed data completed with Dakar Pharmacies network and historic orders");
 }
 
 main()

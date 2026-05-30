@@ -14,6 +14,9 @@ export class Pharmacie {
   @Column("varchar")
   nom!: string;
 
+  @Column("varchar", { nullable: true })
+  zone!: string;
+
   @Column("varchar")
   telephone!: string;
 

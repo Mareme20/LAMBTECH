@@ -2,13 +2,14 @@ import { Request, Response } from "express";
 import { Repository } from "typeorm";
 import { OCRService } from "../../../utils/OCRService";
 import { ChatbotService } from "../../../utils/ChatbotService";
-import { Medicament } from "../../../modules/medicament/entity/medicament.entity"; // Ajustez le chemin vers votre entité
+import { Medicament } from "../../../modules/medicament/entity/medicament.entity";
+import path from "path";
+import fs from "fs";
 
 export class AIController {
   private ocrService: OCRService;
   private chatbotService = new ChatbotService();
 
-  // Le constructeur reçoit le repository TypeORM injecté depuis les routes
   constructor(medicamentRepository: Repository<Medicament>) {
     this.ocrService = new OCRService(medicamentRepository);
   }
@@ -33,6 +34,30 @@ export class AIController {
       return res.json({ response });
     } catch (error: any) {
       return res.status(500).json({ message: error.message });
+    }
+  }
+
+  async getEpidemicAlerts(req: Request, res: Response) {
+    try {
+      // Chemin vers le fichier généré par le script Python
+      const filePath = path.join(__dirname, "../../../../../ia/prediction/alertes_output_production.json");
+      
+      if (!fs.existsSync(filePath)) {
+        return res.json({ 
+          message: "Aucune alerte détectée pour le moment ou le moteur ML n'a pas encore tourné.",
+          alertes: [] 
+        });
+      }
+
+      const data = fs.readFileSync(filePath, "utf-8");
+      const alertes = JSON.parse(data);
+      
+      return res.json({ 
+        count: alertes.length,
+        alertes 
+      });
+    } catch (error: any) {
+      return res.status(500).json({ message: "Erreur lors de la récupération des alertes ML." });
     }
   }
 }
