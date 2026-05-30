@@ -8,7 +8,7 @@ build/
 logs/
 *.log
 
- 
+ .env
 
 # Runtime / uploads
 uploads/
