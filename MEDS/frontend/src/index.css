@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  html, body {
+    overscroll-behavior-y: none; /* Prevent pull-to-refresh & bounce */
+    -webkit-tap-highlight-color: transparent; /* Remove blue highlight on tap */
+  }
+  
+  body {
+    @apply antialiased font-sans text-gray-600 bg-surface overflow-x-hidden;
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(11, 13, 18, 0.03) 0%, transparent 40%);
+  }
+
+  /* Prevent text selection to feel like a native app */
+  * {
+    -webkit-user-select: none;
+    user-select: none;
+    @apply selection:bg-accent selection:text-white;
+  }
+
+  /* But allow selection in inputs/textareas */
+  input, textarea {
+    -webkit-user-select: auto;
+    user-select: auto;
+  }
+}
+
+@layer components {
+  /* Navigation */
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    @apply border-b border-black/5;
+  }
+
+  /* Cards */
+  .glass-card {
+    @apply bg-white border border-black/[0.04] transition-all duration-300;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.06);
+  }
+  .glass-card:hover {
+    box-shadow: 0 30px 50px -20px rgba(16, 185, 129, 0.12);
+    @apply border-accent/20;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-accent text-white font-bold rounded-full px-8 py-3.5 text-sm tracking-wide transition-all duration-200 shadow-glow-green hover:bg-emerald-400 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
+  }
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 bg-primary text-accent font-bold rounded-full px-8 py-3.5 text-sm tracking-wide transition-all duration-200 shadow-glow-dark hover:bg-gray-900 hover:-translate-y-0.5 focus:outline-none;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 bg-white border border-gray-200 text-primary font-bold rounded-full px-8 py-3.5 text-sm tracking-wide transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 focus:outline-none;
+  }
+
+  /* Form inputs */
+  .form-input {
+    @apply w-full px-4 py-3.5 bg-surfaceAlt border border-gray-200 rounded-2xl text-primary text-sm font-medium transition-all duration-200 focus:outline-none focus:bg-white focus:border-accent focus:ring-4 focus:ring-accent/10 placeholder:text-gray-400;
+  }
+
+  /* Badge (pill label) */
+  .badge-pill {
+    @apply inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary/70;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+
+  /* Section label */
+  .section-label {
+    @apply inline-block text-[10px] font-bold tracking-widest uppercase text-accent mb-3 border border-accent/30 px-3 py-1.5 rounded-full bg-accent/5;
+  }
+
+  /* Stats card separator */
+  .stat-divider {
+    @apply border-b md:border-b-0 md:border-r border-gray-100;
+  }
+
+  /* Blob GPU optimization */
+  .gpu-blob {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    pointer-events: none;
+    contain: layout style;
+  }
+
+  /* Bottom Nav Safe Area */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  
+  /* Scan Radar Animation */
+  .scan-radar {
+    background: linear-gradient(to bottom, rgba(16, 185, 129, 0), rgba(16, 185, 129, 0.5));
+    animation: radar-sweep 2s infinite linear;
+  }
+
+  @keyframes radar-sweep {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+}
