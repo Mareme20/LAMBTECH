@@ -75,14 +75,15 @@ def obtenir_alertes_stock():
             vitesse_normale = 4.2
             
             # Application du couplage (Accélération des ventes calculée par l'IA)
-            facteur_acceleration = alerte['valeurDangerMl']
+            facteur_acceleration = alerte['valeur_danger_ml']
             vitesse_ajustee = vitesse_normale * (1 + (facteur_acceleration / 100))
             
             # Calcul de l'autonomie critique
             autonomie_h = round((stock_actuel / vitesse_ajustee) * 24, 1)
             
             # Détermination du statut logistique
-            if autonomie_h <= 36 or alerte['niveauAlerte'] == "CRITIQUE":
+            niveau_alerte = alerte.get('niveau_alerte', alerte.get('niveauAlerte'))
+            if autonomie_h <= 36 or niveau_alerte == "CRITIQUE":
                 statut_logistique = "CRITIQUE"
             elif autonomie_h <= 72:
                 statut_logistique = "ATTENTION"
@@ -91,12 +92,12 @@ def obtenir_alertes_stock():
 
             # Construction de l'objet de sortie synchronisé avec le backend Node.js
             alertes_logistiques.append({
-                'pharmacieId': alerte['pharmacieId'],
-                'nomPharmacie': alerte['nomPharmacie'],
-                'adresse': alerte['adresse'],
-                'medicamentId': alerte['medicamentId'],
-                'nomCommercial': alerte['nomCommercial'],
-                'molecule': alerte['molecule'],
+                'pharmacieId': alerte.get('pharmacieId', alerte.get('pharmacie_id')),
+                'nomPharmacie': alerte.get('nomPharmacie', alerte.get('nom_pharmacie')),
+                'adresse': alerte.get('adresse', "Non fournie"),
+                'medicamentId': alerte.get('medicamentId', alerte.get('medicament_id')),
+                'nomCommercial': alerte.get('nomCommercial', alerte.get('nom_medicament')),
+                'molecule': alerte.get('molecule', alerte.get('nom_medicament')),
                 'stockActuel': stock_actuel,
                 'vitesseAjustee': round(vitesse_ajustee, 2),
                 'autonomieHeures': autonomie_h,
