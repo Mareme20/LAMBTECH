@@ -30,6 +30,30 @@ export class MedicamentController {
     return res.json(result);
   }
 
+  async searchPrescriptionNearby(req: Request, res: Response) {
+    const { lat, lon, meds, rayon } = req.query;
+    if (!lat || !lon || !meds) {
+      return res.status(400).json({ 
+        message: "Latitude, longitude et liste de médicaments (meds) sont requises." 
+      });
+    }
+
+    const medsList = (meds as string).split(",");
+
+    try {
+      const result = await this.service.searchPrescriptionNearby(
+        Number(lat),
+        Number(lon),
+        medsList,
+        Number(rayon || 10)
+      );
+
+      return res.json(result);
+    } catch (error: any) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
   async searchNearby(req: Request, res: Response) {
     const { lat, lon, medicamentId, rayon, q } = req.query;
     if (!lat || !lon) {

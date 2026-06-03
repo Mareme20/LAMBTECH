@@ -5,6 +5,7 @@ import PatientDashboard from './pages/PatientDashboard';
 import PharmacieDashboard from './pages/PharmacieDashboard';
 import LivreurDashboard from './pages/LivreurDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import DistrictDashboard from './pages/DistrictDashboard';
 import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
 import Home from './pages/Home';
@@ -40,6 +41,8 @@ function App() {
         <Route path="/livreur/*" element={<LivreurDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/*" element={<AdminDashboard />} />
+        <Route path="/district" element={<DistrictDashboard />} />
+        <Route path="/district/*" element={<DistrictDashboard />} />
       </Routes>
     </Router>
   );

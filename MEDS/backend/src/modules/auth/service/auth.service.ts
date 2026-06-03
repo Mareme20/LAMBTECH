@@ -25,33 +25,22 @@ export class AuthService {
     let pharmacieId: number | undefined = data.pharmacieId;
 
     if (data.role === "PHARMACIE" && !pharmacieId) {
-      const { Pharmacie } = await import(
-        "../../pharmacie/entity/pharmacie.entity"
-      );
-      const { PharmacieRepository } = await import(
-        "../../pharmacie/repository/impl/pharmacie.repository"
+      const { PharmacieService } = await import(
+        "../../pharmacie/service/pharmacie.service"
       );
 
-      const pharmacieRepo = new PharmacieRepository();
+      const pharmacieService = new PharmacieService();
 
       // Default Dakar pharmacy (generic)
-      const defaultPharmacie = pharmacieRepo.create({
+      const created = await pharmacieService.create({
         nom: "Pharmacie (Auto) Dakar",
         telephone: "+221000000000",
         adresse: "Dakar",
         latitude: 14.7167,
         longitude: -17.4677,
-        estDeGarde: false,
-        statutActivation: true,
         heureOuverture: "08:00",
         heureFermeture: "22:00",
-        // localisation handled by service normally; repository.save accepts extra fields
-        localisation: `SRID=4326;POINT(${ -17.4677 } ${ 14.7167 })`,
       } as any);
-
-      const created = await pharmacieRepo.create(
-        (await defaultPharmacie) as any
-      );
 
       pharmacieId = created.id;
     }

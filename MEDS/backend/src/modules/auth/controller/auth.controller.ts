@@ -7,19 +7,15 @@ export class AuthController {
 
   async register(req: Request, res: Response) {
     try {
-
-      const result =
-        await this.service.register(req.body);
-
+      const result = await this.service.register(req.body);
       return res.status(201).json({
         message: "Utilisateur créé",
         data: result,
       });
-
     } catch (error: any) {
-
+      console.error("Erreur Inscription:", error);
       return res.status(400).json({
-        message: error.message,
+        message: error.message || "Erreur lors de l'inscription",
       });
     }
   }

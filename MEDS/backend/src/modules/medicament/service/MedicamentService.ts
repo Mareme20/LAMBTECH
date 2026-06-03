@@ -24,6 +24,55 @@ export class MedicamentService {
     return await this.repository.findAll();
   }
 
+  async searchPrescriptionNearby(lat: number, lon: number, medsList: string[], rayonKm: number = 10) {
+    const resultsByMed: any[] = [];
+    
+    // Pour chaque médicament de la liste, on lance une recherche nearby
+    for (const medName of medsList) {
+      const results = await this.pharmacieRepository.findWithStockAndDistance(lat, lon, undefined, rayonKm, medName);
+      resultsByMed.push({ name: medName, pharmacies: results });
+    }
+
+    // On regroupe par pharmacie
+    const pharmacieMap = new Map<number, any>();
+
+    resultsByMed.forEach(medGroup => {
+      medGroup.pharmacies.forEach((p: any) => {
+        if (!pharmacieMap.has(p.pharmacie_id)) {
+          pharmacieMap.set(p.pharmacie_id, {
+            ...p,
+            medsTrouves: [],
+            score: 0
+          });
+        }
+        const pharmData = pharmacieMap.get(p.pharmacie_id);
+        pharmData.medsTrouves.push({
+          nomDemande: medGroup.name,
+          nomTrouve: p.medicament_nomCommercial,
+          quantite: p.stock_quantite,
+          prix: Number(p.medicament_prixUnitaire)
+        });
+        pharmData.score += 1;
+      });
+    });
+
+    // On transforme la Map en tableau et on trie par distance uniquement
+    return Array.from(pharmacieMap.values())
+      .map(p => ({
+        id: p.pharmacie_id,
+        nom: p.pharmacie_nom,
+        telephone: p.pharmacie_telephone,
+        adresse: p.pharmacie_adresse,
+        latitude: Number(p.pharmacie_latitude),
+        longitude: Number(p.pharmacie_longitude),
+        distance: Number(p.distance_km),
+        score: p.score,
+        totalMeds: medsList.length,
+        medsDetails: p.medsTrouves
+      }))
+      .sort((a, b) => a.distance - b.distance);
+  }
+
   async searchNearby(lat: number, lon: number, medicamentId?: number, rayonKm: number = 10, searchTerm?: string) {
     if (medicamentId) {
       const medicament = await this.repository.findById(medicamentId);

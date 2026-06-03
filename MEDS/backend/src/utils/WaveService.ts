@@ -42,11 +42,11 @@ export class WaveService {
   }
 
   async createPaymentSession(amount: number, orderId: number) {
-    // Mode Simulation (Si aucune clé API n'est configurée)
-    if (!this.apiKey) {
+    // Mode Simulation (Si aucune clé API n'est configurée ou si c'est un placeholder)
+    if (!this.apiKey || this.apiKey.includes('votre_cle_ici')) {
       console.log(`[Wave Mock] Création d'une session de paiement pour la commande ${orderId} d'un montant de ${amount} FCFA.`);
       return {
-        payment_url: `https://wave.com{orderId}`,
+        payment_url: `https://wave.com/pay/${orderId}`,
         id: `wave_id_${Math.random().toString(36).substring(2, 11)}`,
       };
     }

@@ -5,6 +5,10 @@ import { ChatbotService } from "../../../utils/ChatbotService";
 import { Medicament } from "../../../modules/medicament/entity/medicament.entity";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class AIController {
   private ocrService: OCRService;
@@ -23,6 +27,7 @@ export class AIController {
       const results = await this.ocrService.analyzePrescription(req.file.buffer);
       return res.json({ medicaments: results });
     } catch (error: any) {
+      console.error("Erreur Scan:", error);
       return res.status(500).json({ message: error.message });
     }
   }
@@ -33,6 +38,7 @@ export class AIController {
       const response = await this.chatbotService.getResponse(message, lang || "FR");
       return res.json({ response });
     } catch (error: any) {
+      console.error("Erreur Chat:", error);
       return res.status(500).json({ message: error.message });
     }
   }
@@ -42,6 +48,8 @@ export class AIController {
       // Chemin vers le fichier généré par le script Python
       const filePath = path.join(__dirname, "../../../../../ia/prediction/alertes_output_production.json");
       
+      console.log("Recherche des alertes dans:", filePath);
+
       if (!fs.existsSync(filePath)) {
         return res.json({ 
           message: "Aucune alerte détectée pour le moment ou le moteur ML n'a pas encore tourné.",
@@ -57,7 +65,8 @@ export class AIController {
         alertes 
       });
     } catch (error: any) {
-      return res.status(500).json({ message: "Erreur lors de la récupération des alertes ML." });
+      console.error("Erreur Alertes:", error);
+      return res.status(500).json({ message: "Erreur lors de la récupération des alertes ML.", details: error.message });
     }
   }
 }

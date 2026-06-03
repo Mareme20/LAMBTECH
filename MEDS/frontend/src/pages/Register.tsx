@@ -1,100 +1,107 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Store, Truck } from 'lucide-react';
+import { Loader2, UserPlus } from 'lucide-react';
+import { AuthService } from '../services/auth.service';
+import { useAuth } from '../context/AuthContext';
+import styles from './Register.module.css';
 
 const Register: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('PATIENT');
+  const [formData, setFormData] = useState({
+    email: '',
+    motDePasse: '',
+    nomComplet: '',
+    role: 'PATIENT',
+    adresse: '',
+    telephone: ''
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    setTimeout(() => {
+    try {
+      // Force le rôle PATIENT pour l'inscription publique
+      const dataToSubmit = { ...formData, role: 'PATIENT' };
+      const response = await AuthService.register(dataToSubmit);
+      login(response);
+      navigate('/patient');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors de l\'inscription');
+    } finally {
       setLoading(false);
-      navigate('/login');
-    }, 1000);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
   return (
-    <div className="animate-fade-in w-full">
+    <div className={styles.registerContainer}>
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-dark mb-2">Rejoignez MEDS</h2>
-        <p className="text-gray-500">Créez votre compte en quelques secondes.</p>
+        <h2 className={styles.title}>Rejoignez MEDS 🏥</h2>
+        <p className={styles.subtitle}>Créez votre compte patient en quelques secondes</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100">
+        <div className={styles.errorBadge}>
           {error}
         </div>
       )}
 
-      <form onSubmit={handleRegister} className="space-y-5">
-        {/* Role Selector Grid */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-3">Quel est votre profil ?</label>
-          <div className="grid grid-cols-3 gap-3">
-            <label className={`cursor-pointer flex flex-col items-center p-3 rounded-xl border-2 transition-all ${role === 'PATIENT' ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 hover:border-gray-300 text-gray-500'}`}>
-              <input type="radio" name="role" value="PATIENT" checked={role === 'PATIENT'} onChange={(e) => setRole(e.target.value)} className="hidden" />
-              <User size={24} className="mb-1" />
-              <span className="text-xs font-bold">Patient</span>
-            </label>
-            <label className={`cursor-pointer flex flex-col items-center p-3 rounded-xl border-2 transition-all ${role === 'PHARMACIE' ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 hover:border-gray-300 text-gray-500'}`}>
-              <input type="radio" name="role" value="PHARMACIE" checked={role === 'PHARMACIE'} onChange={(e) => setRole(e.target.value)} className="hidden" />
-              <Store size={24} className="mb-1" />
-              <span className="text-xs font-bold">Pharmacie</span>
-            </label>
-            <label className={`cursor-pointer flex flex-col items-center p-3 rounded-xl border-2 transition-all ${role === 'LIVREUR' ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 hover:border-gray-300 text-gray-500'}`}>
-              <input type="radio" name="role" value="LIVREUR" checked={role === 'LIVREUR'} onChange={(e) => setRole(e.target.value)} className="hidden" />
-              <Truck size={24} className="mb-1" />
-              <span className="text-xs font-bold">Livreur</span>
-            </label>
+      <form onSubmit={handleRegister}>
+        <div className={styles.formGroup}>
+          <label className={styles.label} htmlFor="nomComplet">Nom complet</label>
+          <input type="text" id="nomComplet" required className={styles.input} value={formData.nomComplet} onChange={handleChange} placeholder="Jean Dupont" />
+        </div>
+
+        <div className={styles.formGrid}>
+          <div className={styles.formGroup}>
+            <label className={styles.label} htmlFor="email">Email</label>
+            <input type="email" id="email" required className={styles.input} value={formData.email} onChange={handleChange} placeholder="jean@email.com" />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.label} htmlFor="telephone">Téléphone</label>
+            <input type="tel" id="telephone" required className={styles.input} value={formData.telephone} onChange={handleChange} placeholder="+221 ..." />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-dark text-base transition-all duration-200 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="votre@email.com"
-          />
+        <div className={styles.formGroup}>
+          <label className={styles.label} htmlFor="adresse">Adresse</label>
+          <input type="text" id="adresse" required className={styles.input} value={formData.adresse} onChange={handleChange} placeholder="Dakar, Plateau..." />
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="password">Mot de passe</label>
-          <input
-            type="password"
-            id="password"
-            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-dark text-base transition-all duration-200 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="••••••••"
-          />
-          <p className="text-xs text-gray-400 mt-2">Doit contenir au moins 8 caractères.</p>
+        <div className={styles.formGroup}>
+          <label className={styles.label} htmlFor="motDePasse">Mot de passe</label>
+          <input type="password" id="motDePasse" required className={styles.input} value={formData.motDePasse} onChange={handleChange} placeholder="••••••••" />
         </div>
 
-        <button type="submit" className="w-full btn btn-primary mt-6" disabled={loading}>
-          {loading ? 'Création du compte...' : 'Créer mon compte'}
+        <button type="submit" disabled={loading} className={styles.submitBtn}>
+          {loading ? (
+            <>
+              <Loader2 className="animate-spin" size={20} />
+              Inscription...
+            </>
+          ) : (
+            <>
+              <UserPlus size={20} />
+              S'inscrire comme Patient
+            </>
+          )}
         </button>
       </form>
-      
-      <div className="mt-8 text-center text-gray-500">
-        Vous avez déjà un compte ?{' '}
-        <Link to="/login" className="text-primary-600 font-semibold hover:text-primary-700 transition-colors">
-          Connectez-vous
+
+      <p className={styles.footerText}>
+        Déjà un compte ?{' '}
+        <Link to="/login" className={styles.link}>
+          Se connecter
         </Link>
-      </div>
+      </p>
     </div>
   );
 };

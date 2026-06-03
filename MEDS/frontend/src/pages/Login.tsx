@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { AuthService } from '../services/auth.service';
+import { useAuth } from '../context/AuthContext';
+import styles from './Login.module.css';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -9,47 +12,61 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setTimeout(() => {
+    
+    try {
+      const response = await AuthService.login(email, password);
+      login(response);
+      
+      // Redirect based on role
+      const role = response.user.role;
+      if (role === 'ADMIN') navigate('/admin');
+      else if (role === 'PHARMACIE') navigate('/pharmacie');
+      else if (role === 'LIVREUR') navigate('/livreur');
+      else if (role === 'DISTRICT') navigate('/district');
+      else navigate('/patient');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Identifiants invalides');
+    } finally {
       setLoading(false);
-      navigate('/patient');
-    }, 1000);
+    }
   };
 
   return (
-    <div className="w-full animate-fade-up">
+    <div className={styles.loginContainer}>
       <div className="mb-8">
-        <h2 className="font-outfit font-black text-3xl text-primary mb-2">Bon retour ! 👋</h2>
-        <p className="text-gray-500 font-medium">Connectez-vous pour accéder à votre espace MEDS</p>
+        <h2 className={styles.title}>Bon retour ! 👋</h2>
+        <p className={styles.subtitle}>Connectez-vous pour accéder à votre espace MEDS</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-500 px-4 py-3.5 rounded-2xl mb-6 text-sm font-semibold border border-red-100">
+        <div className={styles.errorBadge}>
           {error}
         </div>
       )}
 
       <form onSubmit={handleLogin} className="space-y-5">
-        <div>
-          <label className="block text-sm font-bold text-gray-600 mb-2" htmlFor="email">
+        <div className={styles.formGroup}>
+          <label className={styles.label} htmlFor="email">
             Adresse email
           </label>
           <input
             type="email" id="email" required
-            className="form-input"
+            className={styles.input}
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="votre@email.com"
           />
         </div>
 
-        <div>
+        <div className={styles.formGroup}>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-bold text-gray-600" htmlFor="password">Mot de passe</label>
+            <label className={styles.label} htmlFor="password">Mot de passe</label>
             <a href="#" className="text-sm font-bold text-accent hover:text-emerald-600 transition-colors">
               Oublié ?
             </a>
@@ -57,7 +74,7 @@ const Login: React.FC = () => {
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'} id="password" required
-              className="form-input pr-12"
+              className={`${styles.input} pr-12`}
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -69,41 +86,39 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        <button type="submit" disabled={loading}
-          className="btn-primary w-full justify-center py-4 text-base mt-2">
+        <button type="submit" disabled={loading} className={styles.submitBtn}>
           {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <>
+              <Loader2 className="animate-spin" size={20} />
               Connexion...
-            </span>
+            </>
           ) : 'Se connecter'}
         </button>
       </form>
 
-      {/* Divider */}
-      <div className="flex items-center gap-4 my-8">
-        <div className="flex-1 h-px bg-gray-100" />
-        <span className="text-xs font-bold text-gray-300">OU</span>
-        <div className="flex-1 h-px bg-gray-100" />
+      <div className={styles.divider}>
+        <div className={styles.line} />
+        <span className={styles.dividerText}>OU</span>
+        <div className={styles.line} />
       </div>
 
-      {/* Demo access buttons */}
-      <div className="grid grid-cols-3 gap-2 mb-8">
+      <div className={styles.demoGrid}>
         {[
           { label: 'Patient', path: '/patient', color: 'border-accent/30 text-accent hover:bg-accent/5' },
           { label: 'Pharmacie', path: '/pharmacie', color: 'border-blue-200 text-blue-500 hover:bg-blue-50' },
           { label: 'Admin', path: '/admin', color: 'border-purple-200 text-purple-500 hover:bg-purple-50' },
+          { label: 'District', path: '/district', color: 'border-emerald-200 text-emerald-500 hover:bg-emerald-50' },
         ].map(d => (
-          <button key={d.label} onClick={() => navigate(d.path)}
-            className={`text-xs font-black py-2.5 rounded-2xl border transition-all ${d.color}`}>
+          <button key={d.label} type="button" onClick={() => navigate(d.path)}
+            className={`${styles.demoBtn} ${d.color}`}>
             Démo {d.label}
           </button>
         ))}
       </div>
 
-      <p className="text-center text-sm text-gray-400 font-medium">
+      <p className={styles.footerText}>
         Pas encore de compte ?{' '}
-        <Link to="/register" className="font-black text-accent hover:text-emerald-600 transition-colors">
+        <Link to="/register" className={styles.link}>
           S'inscrire gratuitement
         </Link>
       </p>

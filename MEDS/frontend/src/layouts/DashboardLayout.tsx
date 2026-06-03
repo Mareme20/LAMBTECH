@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   Stethoscope, Search, ShoppingBag, ScanText, MessageSquareHeart,
   Package, BarChart2, Users, Truck, Bell, ChevronDown, LogOut,
-  Menu, X, LayoutDashboard
+  Menu, X, LayoutDashboard, Loader2, Store
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface NavItem {
   to: string;
@@ -13,7 +14,7 @@ interface NavItem {
 }
 
 interface DashboardLayoutProps {
-  role: 'PATIENT' | 'PHARMACIE' | 'LIVREUR' | 'ADMIN';
+  role: 'PATIENT' | 'PHARMACIE' | 'LIVREUR' | 'ADMIN' | 'DISTRICT';
   userName?: string;
   children?: React.ReactNode;
 }
@@ -28,6 +29,7 @@ const navByRole: Record<string, NavItem[]> = {
   PHARMACIE: [
     { to: '/pharmacie', icon: <LayoutDashboard size={20} />, label: 'Tableau de bord' },
     { to: '/pharmacie/stock', icon: <Package size={20} />, label: 'Inventaire' },
+    { to: '/pharmacie/meds', icon: <Stethoscope size={20} />, label: 'Médicaments' },
     { to: '/pharmacie/orders', icon: <ShoppingBag size={20} />, label: 'Commandes' },
     { to: '/pharmacie/stats', icon: <BarChart2 size={20} />, label: 'Statistiques' },
   ],
@@ -38,14 +40,39 @@ const navByRole: Record<string, NavItem[]> = {
   ADMIN: [
     { to: '/admin', icon: <LayoutDashboard size={20} />, label: 'Vue globale' },
     { to: '/admin/users', icon: <Users size={20} />, label: 'Utilisateurs' },
+    { to: '/admin/pharmacies', icon: <Store size={20} />, label: 'Pharmacies' },
     { to: '/admin/stats', icon: <BarChart2 size={20} />, label: 'Épidémiologie' },
+  ],
+  DISTRICT: [
+    { to: '/district', icon: <LayoutDashboard size={20} />, label: 'Veille Sanitaire' },
+    { to: '/district/stats', icon: <BarChart2 size={20} />, label: 'Analyses IA' },
   ],
 };
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role, userName = 'Utilisateur' }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role, userName: initialName, children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, token, logout, isAuthenticated } = useAuth();
   const items = navByRole[role] || [];
+  
+  // Protection des routes
+  useEffect(() => {
+    const savedToken = localStorage.getItem('token');
+    if (!savedToken && !token) {
+      navigate('/login');
+    }
+  }, [token, navigate]);
+
+  if (!isAuthenticated && !localStorage.getItem('token')) {
+    return <div className="flex items-center justify-center h-screen bg-surfaceAlt"><Loader2 className="animate-spin text-accent" /></div>;
+  }
+
+  const userName = user?.nom || initialName || 'Utilisateur';
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -90,7 +117,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role, userName = 'Uti
       {/* Logout */}
       <div className="px-4 py-6 border-t border-gray-100">
         <button
-          onClick={() => navigate('/login')}
+          onClick={handleLogout}
           className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-red-400 hover:bg-red-50 w-full transition-all"
         >
           <LogOut size={18} /> Déconnexion
@@ -165,7 +192,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role, userName = 'Uti
 
         {/* Page content */}
         <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
-          <Outlet />
+          {children || <Outlet />}
         </main>
       </div>
 

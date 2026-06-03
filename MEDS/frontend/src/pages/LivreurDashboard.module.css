@@ -1,0 +1,160 @@
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  font-size: 1.875rem;
+  color: var(--primary);
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 1.5rem;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.toggleLabel {
+  font-size: 0.875rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.toggleStatus {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 0.125rem;
+}
+
+.statusOnline { color: var(--accent); }
+.statusOffline { color: #9ca3af; }
+
+.toggle {
+  position: relative;
+  width: 3.5rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background-color: #e5e7eb;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.toggleActive {
+  background-color: var(--accent);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: white;
+  border-radius: 9999px;
+  transition: all 0.3s;
+}
+
+.toggleThumbActive {
+  left: 2rem;
+}
+
+.courseCard {
+  background: white;
+  border-radius: 1.5rem;
+  border: 1px solid #f3f4f6;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  margin-top: 2rem;
+  max-width: 48rem;
+}
+
+.courseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.orderId {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  font-size: 0.875rem;
+  color: var(--primary);
+}
+
+.badgePulse {
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  background-color: #eff6ff;
+  color: #3b82f6;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.timelineItem {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.timelineIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconStart { background-color: var(--accent); color: white; }
+.iconEnd { background-color: var(--primary); color: var(--accent); }
+
+.timelineContent p:first-child {
+  font-size: 0.625rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.timelineContent p:last-child {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  font-size: 0.875rem;
+  color: var(--primary);
+}
+
+.timelineLine {
+  width: 1px;
+  height: 1rem;
+  background-color: #e5e7eb;
+  margin-left: 0.875rem;
+}

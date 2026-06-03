@@ -14,10 +14,13 @@ export class PharmacieService {
   const pharmacie = {
     ...data,
 
-    localisation: `SRID=4326;POINT(
-      ${data.longitude}
-      ${data.latitude}
-    )`,
+    localisation: {
+      type: "Point",
+      coordinates: [
+        Number(data.longitude),
+        Number(data.latitude)
+      ]
+    },
   };
 
   return await this.repository.create(

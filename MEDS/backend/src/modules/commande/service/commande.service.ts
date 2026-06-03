@@ -44,13 +44,13 @@ export class CommandeService {
         await queryRunner.manager.save(items);
       }
 
-      await queryRunner.commitTransaction();
-
-      // Génération du lien de paiement Wave
+      // Génération du lien de paiement Wave (Avant le commit pour garantir la cohérence)
       const payment = await this.waveService.createPaymentSession(
         savedCommande.montantTotal,
         savedCommande.id
       );
+
+      await queryRunner.commitTransaction();
 
       const io = getIO();
       // On recharge la commande avec ses relations pour l'event socket

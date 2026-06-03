@@ -6,6 +6,7 @@
 # Chemin du dossier IA
 IA_DIR="$(cd "$(dirname "$0")" && pwd)"
 PREDICTION_DIR="$IA_DIR/prediction"
+PYTHON_BIN="$IA_DIR/venv/bin/python3"
 
 echo "--------------------------------------------------"
 echo "[MEDS AUTO] Lancement de l'analyse ML : $(date)"
@@ -16,7 +17,7 @@ echo "--------------------------------------------------"
 
 # 2. Lancer la détection d'anomalies
 echo "[1/2] Analyse des ventes et détection d'épidémies..."
-python3 "$PREDICTION_DIR/prediction.py"
+$PYTHON_BIN "$PREDICTION_DIR/prediction.py"
 
 if [ $? -eq 0 ]; then
     echo "[SUCCÈS] Alertes générées."
@@ -27,7 +28,7 @@ fi
 
 # 3. Mettre à jour les graphiques
 echo "[2/2] Mise à jour des graphiques de visualisation..."
-python3 "$PREDICTION_DIR/visualisation.py"
+$PYTHON_BIN "$PREDICTION_DIR/visualisation.py"
 
 if [ $? -eq 0 ]; then
     echo "[SUCCÈS] Graphiques mis à jour."
