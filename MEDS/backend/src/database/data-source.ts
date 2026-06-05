@@ -10,6 +10,7 @@ if (!databaseUrl && !(process.env.DB_HOST && process.env.DB_USERNAME && process.
   console.warn("⚠️ DATABASE_URL manquant. Assurez-vous que DB_HOST/DB_USERNAME/DB_PASSWORD/DB_NAME sont définis.");
 }
 
+
 export const AppDataSource = new DataSource({
   type: "postgres",
 
