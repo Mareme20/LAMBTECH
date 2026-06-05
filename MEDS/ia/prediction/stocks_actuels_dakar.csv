@@ -1,0 +1,26 @@
+pharmacie_id,nom_pharmacie,zone,medicament_id,nom_medicament,stock_physique,seuil_securite_fixe,vitesse_croisiere_j
+1,Pharmacie du Plateau,Plateau,101,Artemether,222,30,10.57580090802163
+1,Pharmacie du Plateau,Plateau,102,Paracetamol,134,30,10.123957592679837
+1,Pharmacie du Plateau,Plateau,103,Amoxicilline,140,30,6.092130483097056
+1,Pharmacie du Plateau,Plateau,104,Metronidazole,194,30,8.21474224376107
+1,Pharmacie du Plateau,Plateau,105,Ibuprofène,236,30,9.207805082202462
+2,Pharmacie de la Médina,Medina,101,Artemether,271,30,9.556219310641971
+2,Pharmacie de la Médina,Medina,102,Paracetamol,172,30,11.78936896513396
+2,Pharmacie de la Médina,Medina,103,Amoxicilline,277,30,6.486373774747933
+2,Pharmacie de la Médina,Medina,104,Metronidazole,140,30,9.322370567394016
+2,Pharmacie de la Médina,Medina,105,Ibuprofène,177,30,8.673295021425664
+3,Pharmacie Hassan II,Medina,101,Artemether,208,30,7.038603981386293
+3,Pharmacie Hassan II,Medina,102,Paracetamol,178,30,7.7990268020067886
+3,Pharmacie Hassan II,Medina,103,Amoxicilline,134,30,8.192489889519251
+3,Pharmacie Hassan II,Medina,104,Metronidazole,294,30,9.328702065331612
+3,Pharmacie Hassan II,Medina,105,Ibuprofène,227,30,8.59964106889528
+4,Pharmacie Ndiaye Pikine,Pikine,101,Artemether,22,30,12.0
+4,Pharmacie Ndiaye Pikine,Pikine,102,Paracetamol,183,30,8.26734025273586
+4,Pharmacie Ndiaye Pikine,Pikine,103,Amoxicilline,170,30,9.762152770114458
+4,Pharmacie Ndiaye Pikine,Pikine,104,Metronidazole,192,30,5.455361150896957
+4,Pharmacie Ndiaye Pikine,Pikine,105,Ibuprofène,251,30,11.59541228979397
+5,Pharmacie Universelle Guédiawaye,Guediawaye,101,Artemether,133,30,10.658781436815229
+5,Pharmacie Universelle Guédiawaye,Guediawaye,102,Paracetamol,128,30,5.111763765541499
+5,Pharmacie Universelle Guédiawaye,Guediawaye,103,Amoxicilline,249,30,9.789631185585097
+5,Pharmacie Universelle Guédiawaye,Guediawaye,104,Metronidazole,230,30,9.782844631778207
+5,Pharmacie Universelle Guédiawaye,Guediawaye,105,Ibuprofène,291,30,8.46623837077889
