@@ -45,21 +45,51 @@ export class AuthService {
       pharmacieId = created.id;
     }
 
-    const user = {
-      ...data,
-      pharmacieId,
+    const user: any = {
+      nomComplet: data.nomComplet,
+      telephone: data.telephone,
+      email: data.email,
       motDePasse: hashedPassword,
+      role: data.role || "PATIENT",
+      estActif: true,
+      pharmacieId: pharmacieId,
+      adresseDefaut: data.adresse || null,
     };
 
-    return await this.repository.create(user as any);
+    const savedUser = await this.repository.create(user as any);
+
+    const token = jwt.sign(
+      {
+        id: savedUser.id,
+        role: savedUser.role,
+        pharmacieId: savedUser.pharmacieId,
+      },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    return {
+      token,
+      user: {
+        id: savedUser.id,
+        nom: savedUser.nomComplet,
+        email: savedUser.email,
+        role: savedUser.role,
+        pharmacieId: savedUser.pharmacieId,
+      },
+    };
   }
 
   async login(data: LoginDto) {
+    console.log(`[Auth] Tentative de connexion pour : ${data.email}`);
 
     const user =
       await this.repository.findByEmail(data.email);
 
     if (!user) {
+      console.warn(`[Auth] Utilisateur introuvable : ${data.email}`);
       throw new Error("Utilisateur introuvable");
     }
 
@@ -69,8 +99,11 @@ export class AuthService {
     );
 
     if (!isValid) {
+      console.warn(`[Auth] Mot de passe incorrect pour : ${data.email}`);
       throw new Error("Mot de passe incorrect");
     }
+
+    console.log(`[Auth] Connexion réussie pour : ${data.email} (${user.role})`);
 
     const token = jwt.sign(
       {

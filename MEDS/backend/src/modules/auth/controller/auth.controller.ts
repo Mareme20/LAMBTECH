@@ -8,10 +8,7 @@ export class AuthController {
   async register(req: Request, res: Response) {
     try {
       const result = await this.service.register(req.body);
-      return res.status(201).json({
-        message: "Utilisateur créé",
-        data: result,
-      });
+      return res.status(201).json(result);
     } catch (error: any) {
       console.error("Erreur Inscription:", error);
       return res.status(400).json({
@@ -22,14 +19,11 @@ export class AuthController {
 
   async login(req: Request, res: Response) {
     try {
-
-      const result =
-        await this.service.login(req.body);
-
+      console.log("[Auth] Requête de connexion reçue pour:", req.body.email);
+      const result = await this.service.login(req.body);
       return res.status(200).json(result);
-
     } catch (error: any) {
-
+      console.error("[Auth] Échec de connexion pour", req.body.email, ":", error.message);
       return res.status(400).json({
         message: error.message,
       });

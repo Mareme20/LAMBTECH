@@ -17,6 +17,9 @@ from "../../pharmacie/entity/pharmacie.entity";
 import { OrderStatus }
 from "../../../shared/enums/order-status.enum";
 
+import { ModeRecuperation }
+from "../../../shared/enums/mode-recuperation.enum";
+
 import { CommandeItem }
 from "./commande-item.entity";
 
@@ -51,6 +54,13 @@ export class Commande {
     default: OrderStatus.EN_ATTENTE,
   })
   statut!: OrderStatus;
+
+  @Column({
+    type: "enum",
+    enum: ModeRecuperation,
+    default: ModeRecuperation.LIVRAISON,
+  })
+  modeRecuperation!: ModeRecuperation;
 
   @Column("int")
   montantTotal!: number;

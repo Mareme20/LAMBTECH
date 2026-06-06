@@ -1,108 +1,288 @@
 import React, { useEffect } from 'react';
 import { Outlet, Link } from 'react-router-dom';
-import { Stethoscope, Menu, X } from 'lucide-react';
+import { Stethoscope, Menu, X, Heart, Leaf, Sparkles } from 'lucide-react';
 import AOS from 'aos';
+import './mainLayout.css';
 
 const MainLayout: React.FC = () => {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [scrolled, setScrolled] = React.useState(false);
 
   useEffect(() => {
-    AOS.init({ duration: 750, once: true, offset: 50 });
+    AOS.init({ duration: 800, once: true, offset: 80, easing: 'ease-out-cubic' });
+
+    // Détection du scroll pour effet glass progressif
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col font-sans">
-      {/* ── Sticky Navbar (style TerangaLearn) ── */}
-      <nav className="glass-nav fixed w-full z-40 top-0 py-4 transition-all duration-300">
-        <div className="container mx-auto px-6 lg:px-12 flex justify-between items-center">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-glow-dark">
-              <Stethoscope className="w-5 h-5 text-accent" />
+    <div className="layout-container">
+      {/* ══════════════════════════════════════════════════════
+          NAVBAR - Design Fusion Médical & Nature
+      ══════════════════════════════════════════════════════ */}
+      <nav className={`main-nav ${scrolled ? 'nav-scrolled' : ''}`}>
+        {/* Barre supérieure - Info santé */}
+        <div className="nav-top-bar">
+          <div className="container mx-auto px-6 lg:px-12">
+            <div className="top-bar-content">
+              <div className="health-indicator">
+                <div className="pulse-dot-nav" />
+                <span>Service santé actif 24h/24</span>
+              </div>
+              <div className="top-bar-links">
+                <a href="tel:+221000000000" className="top-link">
+                  <span className="link-icon">📞</span> Urgences
+                </a>
+                <span className="separator">•</span>
+                <span className="top-link">Dakar, Sénégal 🇸🇳</span>
+              </div>
             </div>
-            <span className="font-outfit font-black text-2xl tracking-tight text-primary">
-              MEDS<span className="text-accent">.</span>
-            </span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-10 text-sm font-semibold tracking-wide">
-            <a href="#services" className="text-primary/70 hover:text-accent hover:-translate-y-0.5 transition-all">Services</a>
-            <a href="#pharmacies" className="text-primary/70 hover:text-accent hover:-translate-y-0.5 transition-all">Pharmacies</a>
-            <a href="#how-it-works" className="text-primary/70 hover:text-accent hover:-translate-y-0.5 transition-all">Comment ça marche</a>
           </div>
-
-          {/* CTA Buttons */}
-          <div className="hidden md:flex items-center gap-4">
-            <Link to="/login" className="text-primary/80 hover:text-accent font-bold text-sm transition-colors">
-              Connexion
-            </Link>
-            <Link to="/register" className="btn-primary px-6 py-2.5 text-sm">
-              Commencer
-            </Link>
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <button className="md:hidden p-2 text-primary" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
         </div>
 
-        {/* Mobile Menu */}
-        {menuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 flex flex-col gap-4 text-sm font-semibold">
-            <a href="#services" className="text-primary/70">Services</a>
-            <a href="#pharmacies" className="text-primary/70">Pharmacies</a>
-            <a href="#how-it-works" className="text-primary/70">Comment ça marche</a>
-            <hr className="border-gray-100" />
-            <Link to="/login" className="text-primary font-bold">Connexion</Link>
-            <Link to="/register" className="btn-primary w-full justify-center py-3">Commencer</Link>
+        {/* Barre principale */}
+        <div className="nav-main-bar">
+          <div className="container mx-auto px-6 lg:px-12">
+            <div className="nav-inner">
+              {/* Logo avec animation */}
+              <Link to="/" className="logo-wrapper group">
+                <div className="logo-icon">
+                  <div className="logo-cross">
+                    <div className="cross-h" />
+                    <div className="cross-v" />
+                  </div>
+                  <Heart className="logo-heart" />
+                </div>
+                <div className="logo-text">
+                  <span className="logo-brand">MEDS</span>
+                  <span className="logo-accent">.</span>
+                  <span className="logo-subtitle">santé</span>
+                </div>
+                <Sparkles className="logo-sparkle" />
+              </Link>
+
+              {/* Navigation Desktop */}
+              <div className="desktop-nav">
+                <div className="nav-links">
+                  <a href="#services" className="nav-link">
+                    <Leaf className="nav-link-icon" />
+                    Services
+                    <span className="nav-link-underline" />
+                  </a>
+                  <a href="#pharmacies" className="nav-link">
+                    <span className="nav-link-icon">💊</span>
+                    Pharmacies
+                    <span className="nav-link-underline" />
+                  </a>
+                  <a href="#how-it-works" className="nav-link">
+                    <span className="nav-link-icon">🔄</span>
+                    Processus
+                    <span className="nav-link-underline" />
+                  </a>
+                  <a href="#testimonials" className="nav-link">
+                    <Heart className="nav-link-icon" />
+                    Avis
+                    <span className="nav-link-underline" />
+                  </a>
+                </div>
+
+                <div className="nav-actions">
+                  <Link to="/login" className="btn-text">
+                    <span>Connexion</span>
+                    <span className="btn-text-underline" />
+                  </Link>
+                  <Link to="/register" className="btn-primary-nav">
+                    <span>Commencer</span>
+                    <div className="btn-shine" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Mobile Menu Toggle */}
+              <button 
+                className="mobile-toggle"
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Menu"
+              >
+                <div className={`hamburger ${menuOpen ? 'active' : ''}`}>
+                  <span /><span /><span />
+                </div>
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Mobile Menu avec animation */}
+        <div className={`mobile-menu ${menuOpen ? 'mobile-menu-open' : ''}`}>
+          <div className="mobile-menu-pattern" />
+          <div className="mobile-menu-content">
+            <div className="mobile-links">
+              <a href="#services" onClick={() => setMenuOpen(false)} className="mobile-link">
+                <Leaf className="mobile-link-icon" />
+                Services
+              </a>
+              <a href="#pharmacies" onClick={() => setMenuOpen(false)} className="mobile-link">
+                <span className="mobile-link-icon">💊</span>
+                Pharmacies
+              </a>
+              <a href="#how-it-works" onClick={() => setMenuOpen(false)} className="mobile-link">
+                <span className="mobile-link-icon">🔄</span>
+                Comment ça marche
+              </a>
+              <a href="#testimonials" onClick={() => setMenuOpen(false)} className="mobile-link">
+                <Heart className="mobile-link-icon" />
+                Témoignages
+              </a>
+            </div>
+            
+            <div className="mobile-actions">
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="mobile-btn-outline">
+                Connexion
+              </Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)} className="mobile-btn-primary">
+                <Heart className="w-4 h-4" />
+                Créer un compte
+              </Link>
+            </div>
+
+            <div className="mobile-info">
+              <div className="mobile-health-badge">
+                <div className="pulse-dot-nav" />
+                Disponible 24h/24 - 7j/7
+              </div>
+              <p className="mobile-emergency">
+                📞 Urgences : <a href="tel:+221000000000">+221 00 000 00 00</a>
+              </p>
+            </div>
+          </div>
+        </div>
       </nav>
 
-      {/* Page content */}
-      <main className="flex-grow">
+      {/* Page Content */}
+      <main className="main-content">
         <Outlet />
       </main>
 
-      {/* ── Footer (style TerangaLearn — sombre arrondi) ── */}
-      <footer className="bg-primary pt-20 pb-10 rounded-t-6xl mt-10">
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-12 border-b border-white/10 pb-16 mb-10">
-            <div>
-              <span className="font-outfit font-black text-4xl tracking-tight text-white mb-4 block">
-                MEDS<span className="text-accent">.</span>
-              </span>
-              <p className="text-gray-400 font-medium text-sm max-w-xs leading-relaxed">
-                La plateforme qui connecte patients, pharmacies et livreurs au Sénégal. Conçue pour notre réalité.
+      {/* ══════════════════════════════════════════════════════
+          FOOTER - Design Chaleureux Africain
+      ══════════════════════════════════════════════════════ */}
+      <footer className="main-footer">
+        {/* Motif décoratif africain */}
+        <div className="footer-pattern-top">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="pattern-svg">
+            <path d="M0,0 C300,80 600,0 900,60 C1050,90 1150,60 1200,40 L1200,120 L0,120 Z" 
+                  fill="currentColor" />
+          </svg>
+        </div>
+
+        <div className="footer-content">
+          <div className="container mx-auto px-6 lg:px-12">
+            {/* Section principale */}
+            <div className="footer-grid">
+              {/* Colonne 1 - Brand */}
+              <div className="footer-brand">
+                <div className="footer-logo">
+                  <div className="footer-logo-icon">
+                    <Stethoscope className="w-6 h-6" />
+                  </div>
+                  <span className="footer-logo-text">
+                    MEDS<span className="text-accent">.</span>
+                  </span>
+                </div>
+                <p className="footer-description">
+                  La première plateforme de santé connectée au Sénégal. 
+                  Nous révolutionnons l'accès aux médicaments avec technologie et humanité.
+                </p>
+                <div className="footer-badges">
+                  <div className="footer-badge">
+                    <div className="w-4 h-4" />
+                    Certifié Ordre des Pharmaciens
+                  </div>
+                  <div className="footer-badge">
+                    <Heart className="w-4 h-4" />
+                    Partenaire santé agréé
+                  </div>
+                </div>
+              </div>
+
+              {/* Colonne 2 - Navigation */}
+              <div className="footer-nav">
+                <h4 className="footer-heading">Plateforme</h4>
+                <ul className="footer-links">
+                  <li><a href="/about">Notre mission</a></li>
+                  <li><a href="/pharmacies">Pharmacies partenaires</a></li>
+                  <li><a href="/livreurs">Devenir livreur</a></li>
+                  <li><a href="/blog">Blog santé</a></li>
+                </ul>
+              </div>
+
+              {/* Colonne 3 - Support */}
+              <div className="footer-nav">
+                <h4 className="footer-heading">Assistance</h4>
+                <ul className="footer-links">
+                  <li><a href="/help">Centre d'aide</a></li>
+                  <li><a href="/faq">Questions fréquentes</a></li>
+                  <li><a href="/contact">Nous contacter</a></li>
+                  <li><a href="/urgences">Numéros d'urgence</a></li>
+                </ul>
+              </div>
+
+              {/* Colonne 4 - Newsletter */}
+              <div className="footer-newsletter">
+                <h4 className="footer-heading">Restez informé</h4>
+                <p className="newsletter-text">
+                  Recevez nos conseils santé et actualités
+                </p>
+                <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+                  <input 
+                    type="email" 
+                    placeholder="votre@email.com" 
+                    className="newsletter-input"
+                  />
+                  <button type="submit" className="newsletter-btn">
+                    <span>→</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Barre de confiance */}
+            <div className="trust-bar">
+              <div className="trust-item">
+                <span className="trust-icon">🔒</span>
+                Paiements sécurisés
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">💚</span>
+                Données médicales protégées
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">⚡</span>
+                Livraison express
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">🇸🇳</span>
+                Made in Sénégal
+              </div>
+            </div>
+
+            {/* Bottom bar */}
+            <div className="footer-bottom">
+              <p className="copyright">
+                © 2026 MEDS Santé — Propulsé par LambTech avec ❤️ pour l'Afrique
               </p>
-            </div>
-            <div className="flex gap-16 text-sm">
-              <div>
-                <h3 className="font-outfit font-black text-white text-lg mb-6">Plateforme</h3>
-                <ul className="space-y-4">
-                  <li><a href="/about" className="text-gray-300 hover:text-accent font-medium text-sm transition-colors">À propos de MEDS</a></li>
-                  <li><a href="/login" className="text-gray-300 hover:text-accent font-medium text-sm transition-colors">Espace Pharmacie</a></li>
-                  <li><a href="/login" className="text-gray-300 hover:text-accent font-medium text-sm transition-colors">Devenir Livreur</a></li>
-                </ul>
+              <div className="legal-links">
+                <a href="/privacy">Confidentialité</a>
+                <span className="dot">•</span>
+                <a href="/terms">CGU</a>
+                <span className="dot">•</span>
+                <a href="/cookies">Cookies</a>
               </div>
-              <div>
-                <h3 className="font-outfit font-black text-white text-lg mb-6">Légal & Aide</h3>
-                <ul className="space-y-4">
-                  <li><a href="/legal" className="text-gray-300 hover:text-accent font-medium text-sm transition-colors">Conditions Générales</a></li>
-                  <li><a href="/legal" className="text-gray-300 hover:text-accent font-medium text-sm transition-colors">Confidentialité</a></li>
-                  <li><a href="/contact" className="text-gray-300 hover:text-accent font-medium text-sm transition-colors">Nous contacter</a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 font-medium gap-4">
-            <p>© 2026 LambTech — MEDS. Tous droits réservés.</p>
-            <div className="flex gap-8">
-              <a href="#" className="hover:text-white transition-colors">Confidentialité</a>
-              <a href="#" className="hover:text-white transition-colors">CGU</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
             </div>
           </div>
         </div>

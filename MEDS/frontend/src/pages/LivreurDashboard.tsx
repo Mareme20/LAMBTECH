@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { Navigation, MapPin, Clock, CheckCircle2, Truck, Star, Loader2 } from 'lucide-react';
 import { CommandeService } from '../services/api.service';
+import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import styles from './LivreurDashboard.module.css';
 
 const LivreurHome: React.FC = () => {
+  const { user } = useAuth();
+  const { socket } = useSocket();
   const [isOnline, setIsOnline] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,9 +40,45 @@ const LivreurHome: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 30000); // Polling every 30s
-    return () => clearInterval(interval);
-  }, []);
+    
+    if (socket) {
+      socket.on('course_assignee', (data: any) => {
+        if (data.livreurId === user?.id) {
+          alert("Une nouvelle course vous a été assignée !");
+          fetchOrders();
+        }
+      });
+
+      socket.on('commande_statut', () => {
+        fetchOrders();
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('course_assignee');
+        socket.off('commande_statut');
+      }
+    };
+  }, [socket, user]);
+
+  // GPS Simulation
+  useEffect(() => {
+    if (isOnline && socket && user) {
+      const interval = setInterval(() => {
+        // Simulation de mouvement autour de Dakar
+        const lat = 14.7 + (Math.random() - 0.5) * 0.01;
+        const lon = -17.4 + (Math.random() - 0.5) * 0.01;
+        
+        socket.emit('update_position', {
+          livreurId: user.id,
+          latitude: lat,
+          longitude: lon
+        });
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [isOnline, socket, user]);
 
   const handleUpdateStatus = async (id: number, status: string) => {
     try {

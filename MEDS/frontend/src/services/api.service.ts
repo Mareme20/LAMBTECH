@@ -107,8 +107,8 @@ export const AIService = {
     return response.data;
   },
 
-  getAlerts: async (): Promise<any[]> => {
-    const response = await apiClient.get('/ai/alerts');
+  getAlerts: async (): Promise<any> => {
+    const response = await apiClient.get('/stats/alerts');
     return response.data;
   },
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { Activity, AlertCircle, BarChart3, Loader2, TrendingUp, MapPin } from 'lucide-react';
 import { AIService } from '../services/api.service';
+import { useSocket } from '../context/SocketContext';
 import styles from './AdminDashboard.module.css'; // Reuse admin styles
 
 const DistrictHome: React.FC = () => {
@@ -36,15 +37,30 @@ const DistrictHome: React.FC = () => {
 };
 
 const DistrictStats: React.FC = () => {
+  const { socket } = useSocket();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchAlerts = () => {
     AIService.getAlerts().then((res: any) => {
       setAlerts(res.alertes || []);
       setLoading(false);
     });
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+
+    if (socket) {
+      socket.on('nouvelle_alerte_ia', () => {
+        fetchAlerts();
+      });
+    }
+
+    return () => {
+      if (socket) socket.off('nouvelle_alerte_ia');
+    };
+  }, [socket]);
 
   return (
     <div className={styles.container}>

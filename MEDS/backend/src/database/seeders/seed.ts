@@ -26,54 +26,51 @@ function randomPhone() {
   return `77${randInt(1000000, 9999999).toString()}`;
 }
 
+import bcrypt from "bcrypt";
+
 async function seedRolesAndUsers() {
   const userRepo = AppDataSource.getRepository(User);
+  const hashedPassword = await bcrypt.hash("password", 10);
 
   const baseUsers = [
     {
       email: "patient1@meds.test",
-      nom: "Diallo",
-      prenom: "Amadou",
       nomComplet: "Diallo Amadou",
       telephone: "+221" + randomPhone(),
       role: Role.PATIENT,
-      motDePasse: "$2b$10$uOe4o7wHn0y8v6eX4aYcFOm0b6y4u2l9p0u3vJgZ0nY0fF0lTQy1a",
+      motDePasse: hashedPassword,
     },
     {
       email: "pharmacie1@meds.test",
-      nom: "Pharmacie",
-      prenom: "Central",
       nomComplet: "Pharmacie Central",
       telephone: "+221" + randomPhone(),
       role: Role.PHARMACIE,
-      motDePasse: "$2b$10$uOe4o7wHn0y8v6eX4aYcFOm0b6y4u2l9p0u3vJgZ0nY0fF0lTQy1a",
+      motDePasse: hashedPassword,
     },
     {
       email: "livreur1@meds.test",
-      nom: "Kane",
-      prenom: "Mamadou",
       nomComplet: "Kane Mamadou",
       telephone: "+221" + randomPhone(),
       role: Role.LIVREUR,
-      motDePasse: "$2b$10$uOe4o7wHn0y8v6eX4aYcFOm0b6y4u2l9p0u3vJgZ0nY0fF0lTQy1a",
+      motDePasse: hashedPassword,
     },
     {
       email: "admin@meds.test",
-      nom: "Admin",
-      prenom: "MedS",
       nomComplet: "Admin MedS",
       telephone: "+221" + randomPhone(),
       role: Role.ADMIN,
-      motDePasse: "$2b$10$uOe4o7wHn0y8v6eX4aYcFOm0b6y4u2l9p0u3vJgZ0nY0fF0lTQy1a",
+      motDePasse: hashedPassword,
     },
   ];
 
   for (const u of baseUsers) {
-    const exists = await userRepo.findOne({ where: { email: u.email } });
-    if (!exists) {
-      const user = userRepo.create(u as any);
-      await userRepo.save(user);
+    let user = await userRepo.findOne({ where: { email: u.email } });
+    if (!user) {
+      user = userRepo.create(u as any);
+    } else {
+      userRepo.merge(user, u as any);
     }
+    await userRepo.save(user);
   }
 }
 

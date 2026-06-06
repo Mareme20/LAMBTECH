@@ -1,39 +1,58 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { Package, ShoppingBag, TrendingUp, AlertCircle, Clock, ChevronRight, Loader2, Users, Plus, X, Activity, Stethoscope, Trash2 } from 'lucide-react';
 import { StockService, CommandeService, MedicamentService } from '../services/api.service';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import styles from './PharmacieDashboard.module.css';
 
 /* ─── Page: Accueil Pharmacie ─── */
 const PharmacieHome: React.FC = () => {
+  const { socket } = useSocket();
   const [orders, setOrders] = useState<any[]>([]);
   const [stocks, setStocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [revenue, setRevenue] = useState(0);
 
+  const fetchData = async () => {
+    try {
+      const [ordersRes, stockRes] = await Promise.all([
+        CommandeService.findAll(),
+        StockService.findAll()
+      ]);
+      setOrders(ordersRes);
+      setStocks(stockRes.filter(s => s.quantite < 10));
+      
+      const totalRevenue = ordersRes
+        .filter(o => o.statut === 'LIVREE' || o.statut === 'PRETE' || o.statut === 'LIVRAISON')
+        .reduce((acc, o) => acc + Number(o.montantTotal), 0);
+      setRevenue(totalRevenue);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [ordersRes, stockRes] = await Promise.all([
-          CommandeService.findAll(),
-          StockService.findAll()
-        ]);
-        setOrders(ordersRes);
-        setStocks(stockRes.filter(s => s.quantite < 10));
-        
-        const totalRevenue = ordersRes
-          .filter(o => o.statut === 'LIVREE' || o.statut === 'PRETE' || o.statut === 'LIVRAISON')
-          .reduce((acc, o) => acc + Number(o.montantTotal), 0);
-        setRevenue(totalRevenue);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+    fetchData();
+    
+    if (socket) {
+      socket.on('nouvelle_commande', () => {
+        fetchData();
+        // Optionnel: petit son de notification
+      });
+      socket.on('commande_statut', () => fetchData());
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('nouvelle_commande');
+        socket.off('commande_statut');
       }
     };
-    fetchData();
-  }, []);
+  }, [socket]);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-accent" /></div>;
 
@@ -409,6 +428,7 @@ const OrdersPage: React.FC = () => {
       case 'EN_ATTENTE': return 'bg-orange-50 text-orange-500';
       case 'PAYEE': return 'bg-blue-50 text-blue-500';
       case 'PREPARATION': return 'bg-purple-50 text-purple-500';
+      case 'PRETE': return 'bg-accent/10 text-accent';
       case 'LIVRAISON': return 'bg-indigo-50 text-indigo-500';
       case 'LIVREE': return 'bg-accent/10 text-accent';
       case 'ANNULEE': return 'bg-red-50 text-red-500';
@@ -441,6 +461,9 @@ const OrdersPage: React.FC = () => {
                         <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${getStatusColor(o.statut)}`}>
                           {o.statut}
                         </span>
+                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${o.modeRecuperation === 'RETRAIT' ? 'bg-purple-50 text-purple-500' : 'bg-blue-50 text-blue-500'}`}>
+                          {o.modeRecuperation === 'RETRAIT' ? '🏪 RETRAIT' : '🛵 LIVRAISON'}
+                        </span>
                       </div>
                       <p className="text-sm font-bold text-gray-500 flex items-center gap-2">
                         <Users size={14} /> {o.patient?.nomComplet} • {o.patient?.telephone}
@@ -458,13 +481,13 @@ const OrdersPage: React.FC = () => {
                   <div className="flex flex-col items-end gap-3">
                     <p className="font-outfit font-black text-primary text-xl">{o.montantTotal} FCFA</p>
                     <div className="flex gap-2">
-                      {o.statut === 'EN_ATTENTE' && (
+                      {o.statut === 'PAYEE' && (
                         <button 
                           onClick={() => updateStatus(o.id, 'PREPARATION')}
                           disabled={updating === o.id}
                           className="bg-blue-500 text-white text-[11px] font-black px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors"
                         >
-                          Préparer
+                          Lancer préparation
                         </button>
                       )}
                       {o.statut === 'PREPARATION' && (
@@ -473,7 +496,16 @@ const OrdersPage: React.FC = () => {
                           disabled={updating === o.id}
                           className="bg-purple-500 text-white text-[11px] font-black px-4 py-2 rounded-xl hover:bg-purple-600 transition-colors"
                         >
-                          Marquer comme prête
+                          {o.modeRecuperation === 'RETRAIT' ? 'Prêt pour retrait' : 'Prêt pour livraison'}
+                        </button>
+                      )}
+                      {o.statut === 'PRETE' && o.modeRecuperation === 'RETRAIT' && (
+                        <button 
+                          onClick={() => updateStatus(o.id, 'LIVREE')}
+                          disabled={updating === o.id}
+                          className="bg-accent text-white text-[11px] font-black px-4 py-2 rounded-xl hover:bg-accent/80 transition-all shadow-soft"
+                        >
+                          Confirmer remise en main propre
                         </button>
                       )}
                       {o.statut !== 'LIVREE' && o.statut !== 'ANNULEE' && (
@@ -553,7 +585,8 @@ const StatsPage: React.FC = () => {
 
 /* ─── Routeur interne Pharmacie ─── */
 const PharmacieDashboard: React.FC = () => {
-  const path = window.location.pathname;
+  const location = useLocation();
+  const path = location.pathname;
   let page = <PharmacieHome />;
   if (path.includes('/pharmacie/stock')) page = <StockPage />;
   else if (path.includes('/pharmacie/meds')) page = <MedsPage />;

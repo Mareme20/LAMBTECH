@@ -7,7 +7,12 @@ if (!process.env.RENDER) {
   dotenv.config();
 }
 
-const databaseUrl = process.env.DATABASE_URL;
+let databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl && process.env.DB_HOST) {
+  databaseUrl = `postgresql://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+}
+
 if (!databaseUrl) {
   console.warn("⚠️ DATABASE_URL manquant dans les variables d'environnement.");
 }

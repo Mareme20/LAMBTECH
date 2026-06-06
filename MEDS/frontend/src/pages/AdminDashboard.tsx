@@ -349,6 +349,9 @@ const EpiPage: React.FC = () => {
       // Le backend renvoie { count: number, alertes: [] }
       setAlerts(res.alertes || []);
       setLoading(false);
+    }).catch(err => {
+      console.error("Erreur alertes:", err);
+      setLoading(false);
     });
   }, []);
 
@@ -364,7 +367,7 @@ const EpiPage: React.FC = () => {
         <div className="relative z-10">
           <div className={styles.alertTitle}>
             <AlertCircle size={20} className="text-red-400" />
-            <h2>Alerte IA : Analyse en cours</h2>
+            <h2>Alerte IA : Surveillance Active</h2>
           </div>
           <p className={styles.alertDesc}>
             L'algorithme MEDS analyse les tendances de recherche et de vente pour détecter des anomalies sanitaires.
@@ -377,16 +380,36 @@ const EpiPage: React.FC = () => {
 
       <div className="bg-white rounded-3xl border border-gray-100 shadow-soft overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-outfit font-black text-primary text-lg">Alertes détectées</h2>
+          <h2 className="font-outfit font-black text-primary text-lg">Alertes détectées ({alerts.length})</h2>
         </div>
         <div className="p-6">
-          {loading ? <Loader2 className="animate-spin text-accent" /> : (
-            alerts.length > 0 ? alerts.map((a, i) => (
-              <div key={i} className="mb-4 p-4 bg-red-50 rounded-2xl border border-red-100">
-                <p className="font-bold text-red-600">{a.maladie}</p>
-                <p className="text-sm text-red-400">{a.description}</p>
+          {loading ? (
+            <div className="p-8 text-center"><Loader2 className="animate-spin mx-auto text-accent" /></div>
+          ) : (
+            alerts.length > 0 ? (
+              <div className="space-y-4">
+                {alerts.map((a, i) => (
+                  <div key={i} className={`p-5 rounded-3xl border ${a.niveau === 'CRITIQUE' ? 'bg-red-50 border-red-100' : 'bg-orange-50 border-orange-100'}`}>
+                    <div className="flex justify-between items-start mb-2">
+                       <p className={`font-black text-sm ${a.niveau === 'CRITIQUE' ? 'text-red-600' : 'text-orange-600'}`}>{a.maladie}</p>
+                       <span className={`text-[10px] font-black px-3 py-1 rounded-full ${a.niveau === 'CRITIQUE' ? 'bg-red-600 text-white' : 'bg-orange-600 text-white'}`}>
+                         {a.niveau}
+                       </span>
+                    </div>
+                    <p className="text-xs text-gray-500 font-medium mb-3">{a.description}</p>
+                    <div className="flex items-center gap-4">
+                       <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1"><MapPin size={10} /> {a.zone}</span>
+                       <span className="text-[10px] font-bold text-gray-400">{new Date(a.date).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )) : <p className="text-gray-400">Aucune alerte majeure détectée.</p>
+            ) : (
+              <div className="text-center py-12">
+                <Activity size={48} className="mx-auto text-gray-100 mb-4" />
+                <p className="text-gray-400 text-sm">Aucune anomalie détectée sur les 30 derniers jours.</p>
+              </div>
+            )
           )}
         </div>
       </div>
