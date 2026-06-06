@@ -22,6 +22,7 @@ services:
       - "5000:5000"
     volumes:
       - ./MEDS/backend:/usr/src/app
+      - ./MEDS/ia:/usr/src/ia:ro
       - /usr/src/app/node_modules
     environment:
       DATABASE_URL: postgresql://${DB_USER:-medsuser}:${DB_PASSWORD:-medspassword}@db:5432/${DB_NAME:-meds_db}
@@ -29,6 +30,21 @@ services:
       JWT_SECRET: ${JWT_SECRET:-supersecretkey}
       NODE_ENV: development
     command: npm run dev
+    depends_on:
+      - db
+
+  ia:
+    build: ./MEDS/ia
+    container_name: meds_ia
+    restart: always
+    volumes:
+      - ./MEDS/ia:/usr/src/ia
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USER:-medsuser}
+      DB_PASSWORD: ${DB_PASSWORD:-medspassword}
+      DB_NAME: ${DB_NAME:-meds_db}
     depends_on:
       - db
 
