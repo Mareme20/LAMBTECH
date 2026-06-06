@@ -1,4 +1,4 @@
-import { AppDataSource } from "../data-source.js";
+import { AppDataSource, initializeDataSourceWithRetry } from "../data-source.js";
 import { Role } from "../../shared/enums/role.enum.js";
 
 // Entities
@@ -411,7 +411,7 @@ async function seedSearchLogs() {
 }
 
 async function main() {
-  await AppDataSource.initialize();
+  await initializeDataSourceWithRetry();
 
   await seedRolesAndUsers();
   await seedMedicaments();

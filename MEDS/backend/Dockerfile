@@ -16,8 +16,11 @@ COPY . .
 # Build TypeScript (optional but helps start reliably)
 RUN npm run build || true
 
+COPY docker-entrypoint.sh /usr/src/app/docker-entrypoint.sh
+RUN chmod +x /usr/src/app/docker-entrypoint.sh
+
 EXPOSE 5000
 
-# Start in dev mode by default (ts, watch)
-CMD ["npm","run","dev"]
+# Default entrypoint: build (already done), optionally run seeds, then start
+CMD ["sh", "/usr/src/app/docker-entrypoint.sh"]
 
