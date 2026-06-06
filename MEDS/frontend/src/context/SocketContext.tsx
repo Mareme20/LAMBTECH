@@ -16,8 +16,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (token) {
-      const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
-      const newSocket = io(SOCKET_URL, {
+      const envUrl = import.meta.env.VITE_SOCKET_URL;
+      let SOCKET_URL: string | undefined;
+      if (envUrl) SOCKET_URL = envUrl;
+      else if (typeof window !== 'undefined') {
+        const host = window.location.hostname;
+        // In dev, connect to local backend. In production, avoid localhost and use current origin (undefined)
+        SOCKET_URL = host === 'localhost' || host === '127.0.0.1' ? 'http://localhost:5000' : undefined;
+      }
+
+      const newSocket = io(SOCKET_URL ?? undefined, {
         auth: { token }
       });
 
