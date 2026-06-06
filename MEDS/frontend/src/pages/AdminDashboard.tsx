@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { Users, ShoppingBag, TrendingUp, AlertCircle, Activity, Shield, Loader2, UserPlus, X, Store, Plus } from 'lucide-react';
+import { Users, ShoppingBag, TrendingUp, AlertCircle, Activity, Shield, Loader2, UserPlus, X, Store, Plus, MapPin } from 'lucide-react';
 import { AuthService } from '../services/auth.service';
 import { AIService, PharmacieService } from '../services/api.service';
 import styles from './AdminDashboard.module.css';
