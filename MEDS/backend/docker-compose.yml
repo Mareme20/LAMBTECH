@@ -15,14 +15,15 @@ services:
       - meds_db_data:/var/lib/postgresql/data
 
   backend:
-    build: ./MEDS/backend
+    build: .   # <-- Modifié ici
     container_name: meds_backend
     restart: always
     ports:
       - "5000:5000"
     volumes:
-      - ./MEDS/backend:/usr/src/app
+      - .:/usr/src/app   # <-- Modifié ici
       - /usr/src/app/node_modules
+
     environment:
       DATABASE_URL: postgresql://${DB_USER:-medsuser}:${DB_PASSWORD:-medspassword}@db:5432/${DB_NAME:-meds_db}
       PORT: 5000
