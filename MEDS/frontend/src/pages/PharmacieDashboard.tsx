@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { Package, ShoppingBag, TrendingUp, AlertCircle, Clock, ChevronRight, BarChart2, Loader2, Users, Plus, X, Activity, Stethoscope, Trash2, Edit3 } from 'lucide-react';
+import { Package, ShoppingBag, TrendingUp, AlertCircle, Clock, ChevronRight, Loader2, Users, Plus, X, Activity, Stethoscope, Trash2 } from 'lucide-react';
 import { StockService, CommandeService, MedicamentService } from '../services/api.service';
 import { useAuth } from '../context/AuthContext';
 import styles from './PharmacieDashboard.module.css';
@@ -505,12 +505,10 @@ const OrdersPage: React.FC = () => {
 /* ─── Page: Statistiques ─── */
 const StatsPage: React.FC = () => {
     const [orders, setOrders] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         CommandeService.findAll().then(res => {
             setOrders(res);
-            setLoading(false);
         });
     }, []);
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { Users, ShoppingBag, TrendingUp, AlertCircle, MapPin, Activity, ChevronRight, Shield, Loader2, UserPlus, X, Store, Plus } from 'lucide-react';
+import { Users, ShoppingBag, TrendingUp, AlertCircle, Activity, Shield, Loader2, UserPlus, X, Store, Plus } from 'lucide-react';
 import { AuthService } from '../services/auth.service';
 import { AIService, PharmacieService } from '../services/api.service';
 import styles from './AdminDashboard.module.css';
@@ -183,14 +183,22 @@ const UsersPage: React.FC = () => {
   const [pharmacies, setPharmacies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    email: string;
+    motDePasse: string;
+    nomComplet: string;
+    role: import('../types').UserRole;
+    adresse: string;
+    telephone: string;
+    pharmacieId?: number;
+  }>({
     email: '',
     motDePasse: '',
     nomComplet: '',
     role: UserRole.PATIENT,
     adresse: '',
     telephone: '',
-    pharmacieId: undefined as number | undefined
+    pharmacieId: undefined
   });
 
   const fetchUsers = () => {

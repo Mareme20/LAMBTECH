@@ -1,49 +1,52 @@
 import React, { useState, useEffect } from 'react';
+import type { SVGProps } from 'react';
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   Stethoscope, Search, ShoppingBag, ScanText, MessageSquareHeart,
   Package, BarChart2, Users, Truck, Bell, ChevronDown, LogOut,
-  Menu, X, LayoutDashboard, Loader2, Store
+  X, LayoutDashboard, Loader2, Store
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+import { UserRole } from '../types';
+
 interface NavItem {
   to: string;
-  icon: React.ReactNode;
+  icon: React.ReactElement<SVGProps<SVGSVGElement>>;
   label: string;
 }
 
 interface DashboardLayoutProps {
-  role: 'PATIENT' | 'PHARMACIE' | 'LIVREUR' | 'ADMIN' | 'DISTRICT';
+  role: UserRole;
   userName?: string;
   children?: React.ReactNode;
 }
 
-const navByRole: Record<string, NavItem[]> = {
-  PATIENT: [
+const navByRole: Record<UserRole, NavItem[]> = {
+  [UserRole.PATIENT]: [
     { to: '/patient', icon: <Search size={20} />, label: 'Rechercher' },
     { to: '/patient/orders', icon: <ShoppingBag size={20} />, label: 'Mes commandes' },
     { to: '/patient/scan', icon: <ScanText size={20} />, label: 'Scanner ordonnance' },
     { to: '/patient/chat', icon: <MessageSquareHeart size={20} />, label: 'Assistant IA' },
   ],
-  PHARMACIE: [
+  [UserRole.PHARMACIE]: [
     { to: '/pharmacie', icon: <LayoutDashboard size={20} />, label: 'Tableau de bord' },
     { to: '/pharmacie/stock', icon: <Package size={20} />, label: 'Inventaire' },
     { to: '/pharmacie/meds', icon: <Stethoscope size={20} />, label: 'Médicaments' },
     { to: '/pharmacie/orders', icon: <ShoppingBag size={20} />, label: 'Commandes' },
     { to: '/pharmacie/stats', icon: <BarChart2 size={20} />, label: 'Statistiques' },
   ],
-  LIVREUR: [
+  [UserRole.LIVREUR]: [
     { to: '/livreur', icon: <LayoutDashboard size={20} />, label: 'Tableau de bord' },
     { to: '/livreur/courses', icon: <Truck size={20} />, label: 'Mes courses' },
   ],
-  ADMIN: [
+  [UserRole.ADMIN]: [
     { to: '/admin', icon: <LayoutDashboard size={20} />, label: 'Vue globale' },
     { to: '/admin/users', icon: <Users size={20} />, label: 'Utilisateurs' },
     { to: '/admin/pharmacies', icon: <Store size={20} />, label: 'Pharmacies' },
     { to: '/admin/stats', icon: <BarChart2 size={20} />, label: 'Épidémiologie' },
   ],
-  DISTRICT: [
+  [UserRole.DISTRICT]: [
     { to: '/district', icon: <LayoutDashboard size={20} />, label: 'Veille Sanitaire' },
     { to: '/district/stats', icon: <BarChart2 size={20} />, label: 'Analyses IA' },
   ],
@@ -215,7 +218,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ role, userName: initi
               {({ isActive }) => (
                 <>
                   <div className={`flex items-center justify-center transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-1' : ''}`}>
-                    {React.cloneElement(icon as React.ReactElement, { size: isActive ? 24 : 22, strokeWidth: isActive ? 2.5 : 2 })}
+                    {React.isValidElement(icon)
+                      ? React.cloneElement(icon as any, { size: isActive ? 24 : 22, strokeWidth: isActive ? 2.5 : 2 })
+                      : icon}
                   </div>
                   <span className={`text-[10px] font-bold transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
                     {label.split(' ')[0]}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import {
   MapPin, ScanText, MessageSquareHeart, ShoppingBag,
-  Package, Clock, CheckCircle2, AlertCircle, Search, Loader2, Info, ChevronRight, X
+  Package, CheckCircle2, Search, Loader2, Info, ChevronRight
 } from 'lucide-react';
 import { MedicamentService, CommandeService, AIService } from '../services/api.service';
 import { useAuth } from '../context/AuthContext';
@@ -113,7 +113,7 @@ const SearchPage: React.FC = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLoc([pos.coords.latitude, pos.coords.longitude]),
-        (err) => console.warn("Geolocation denied or failed, using fallback.")
+        () => console.warn("Geolocation denied or failed, using fallback.")
       );
     }
   }, []);
@@ -232,7 +232,7 @@ const ScanPage: React.FC = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLoc([pos.coords.latitude, pos.coords.longitude]),
-        (err) => console.warn("Geolocation denied or failed, using fallback.")
+        () => console.warn("Geolocation denied or failed, using fallback.")
       );
     }
   }, []);

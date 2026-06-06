@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { Navigation, MapPin, Clock, CheckCircle2, XCircle, Truck, Star, Loader2, ShoppingBag } from 'lucide-react';
+import { Navigation, MapPin, Clock, CheckCircle2, Truck, Star, Loader2 } from 'lucide-react';
 import { CommandeService } from '../services/api.service';
 import styles from './LivreurDashboard.module.css';
 
