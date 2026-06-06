@@ -4,6 +4,7 @@ import { Users, ShoppingBag, TrendingUp, AlertCircle, MapPin, Activity, ChevronR
 import { AuthService } from '../services/auth.service';
 import { AIService, PharmacieService } from '../services/api.service';
 import styles from './AdminDashboard.module.css';
+import { UserRole } from '../types';
 
 /* ─── Page: Accueil Admin ─── */
 const AdminHome: React.FC = () => {
@@ -186,7 +187,7 @@ const UsersPage: React.FC = () => {
     email: '',
     motDePasse: '',
     nomComplet: '',
-    role: 'PATIENT',
+    role: UserRole.PATIENT,
     adresse: '',
     telephone: '',
     pharmacieId: undefined as number | undefined
@@ -276,7 +277,7 @@ const UsersPage: React.FC = () => {
                 <div>
                   <label className="block text-xs font-black text-gray-400 mb-2 uppercase">Rôle</label>
                   <select className="w-full bg-surfaceAlt border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 ring-accent"
-                    value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as any})}>
+                    value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as UserRole})}>
                     <option value="PATIENT">Patient</option>
                     <option value="PHARMACIE">Pharmacien</option>
                     <option value="LIVREUR">Livreur</option>

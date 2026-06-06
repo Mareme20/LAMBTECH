@@ -4,13 +4,14 @@ import { Loader2, UserPlus } from 'lucide-react';
 import { AuthService } from '../services/auth.service';
 import { useAuth } from '../context/AuthContext';
 import styles from './Register.module.css';
+import { UserRole } from '../types';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     motDePasse: '',
     nomComplet: '',
-    role: 'PATIENT',
+    role: UserRole.PATIENT,
     adresse: '',
     telephone: ''
   });
@@ -26,7 +27,7 @@ const Register: React.FC = () => {
     
     try {
       // Force le rôle PATIENT pour l'inscription publique
-      const dataToSubmit = { ...formData, role: 'PATIENT' };
+      const dataToSubmit = { ...formData, role: UserRole.PATIENT as UserRole };
       const response = await AuthService.register(dataToSubmit);
       login(response);
       navigate('/patient');

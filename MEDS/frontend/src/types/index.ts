@@ -1,10 +1,12 @@
-export enum UserRole {
-  PATIENT = 'PATIENT',
-  PHARMACIE = 'PHARMACIE',
-  LIVREUR = 'LIVREUR',
-  ADMIN = 'ADMIN',
-  DISTRICT = 'DISTRICT',
-}
+export const UserRole = {
+  PATIENT: 'PATIENT',
+  PHARMACIE: 'PHARMACIE',
+  LIVREUR: 'LIVREUR',
+  ADMIN: 'ADMIN',
+  DISTRICT: 'DISTRICT',
+} as const;
+
+export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export interface User {
   id: number;
