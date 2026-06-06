@@ -29,11 +29,14 @@ app.use(cors({
 }));
 
 // Ensure OPTIONS preflight returns 204 (no redirect)
-app.options('*', (req, res) => {
-	// small log to help debugging CORS issues on deployed instances
-	// eslint-disable-next-line no-console
-	console.log('[CORS] Handling preflight for', req.path);
-	res.sendStatus(204);
+// Handle OPTIONS preflight with a simple middleware to avoid path-to-regexp issues
+app.use((req, res, next) => {
+	if (req.method === 'OPTIONS') {
+		// eslint-disable-next-line no-console
+		console.log('[CORS] Handling preflight for', req.path);
+		return res.sendStatus(204);
+	}
+	next();
 });
 app.use(helmet());
 app.use(morgan("dev"));
