@@ -1,38 +1,30 @@
 import "reflect-metadata";
 import dotenv from "dotenv";
 
-dotenv.config();
+// Load local .env only when explicitly in development or when LOAD_DOTENV=true
+if (process.env.NODE_ENV === "development" || process.env.LOAD_DOTENV === "true") {
+  dotenv.config();
+}
 
 import http from "http";
 
 import app from "./app";
 
-import { AppDataSource }
-from "./database/data-source";
+import { AppDataSource, initializeDataSourceWithRetry } from "./database/data-source";
 
-import {
-  initializeSocket
-}
-from "./socket/socket.server";
+import { initializeSocket } from "./socket/socket.server";
 
-const PORT =
-  process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
-const server =
-  http.createServer(app);
+const server = http.createServer(app);
 
 initializeSocket(server);
 
-AppDataSource.initialize()
-  .then(() => {
+server.listen(PORT, () => {
+  console.log(`Serveur lancé sur ${PORT}`);
+});
 
-    server.listen(PORT, () => {
-
-      console.log(
-        `Serveur lancé sur ${PORT}`
-      );
-    });
-  })
-  .catch((error: unknown) => {
-    console.log(error);
-  });
+// Initialize DB with retry/backoff — do not block server listen
+initializeDataSourceWithRetry(5, 2000)
+  .then(() => console.log("Base de données initialisée"))
+  .catch((error: unknown) => console.error("Initialisation DB échouée:", error));

@@ -2,7 +2,10 @@ import "reflect-metadata";
 import { DataSource, DataSourceOptions } from "typeorm";
 import dotenv from "dotenv";
 
-dotenv.config();
+// Load local .env only when explicitly in development or when LOAD_DOTENV=true
+if (process.env.NODE_ENV === "development" || process.env.LOAD_DOTENV === "true") {
+  dotenv.config();
+}
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl && !(process.env.DB_HOST && process.env.DB_USERNAME && process.env.DB_NAME)) {
@@ -28,3 +31,29 @@ const options: DataSourceOptions = {
 } as DataSourceOptions;
 
 export const AppDataSource = new DataSource(options);
+
+/**
+ * Initialize the data source with retries and exponential backoff.
+ * @param retries number of retries (default 5)
+ * @param delayMs base delay in ms (default 2000)
+ */
+export async function initializeDataSourceWithRetry(retries = 5, delayMs = 2000): Promise<void> {
+  let attempt = 0;
+  while (true) {
+    try {
+      if (!AppDataSource.isInitialized) {
+        await AppDataSource.initialize();
+      }
+      return;
+    } catch (err) {
+      attempt++;
+      if (attempt > retries) {
+        throw err;
+      }
+      const wait = delayMs * Math.pow(2, attempt - 1);
+      console.warn(`DB connection failed (attempt ${attempt}/${retries}), retrying in ${wait}ms...`);
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((res) => setTimeout(res, wait));
+    }
+  }
+}

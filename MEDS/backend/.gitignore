@@ -9,6 +9,7 @@ logs/
 *.log
 
  .env
+/.env
 
 # Runtime / uploads
 uploads/
