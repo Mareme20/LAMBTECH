@@ -2,40 +2,39 @@ import "reflect-metadata";
 import { DataSource, DataSourceOptions } from "typeorm";
 import dotenv from "dotenv";
 
-// Load local .env only when explicitly in development or when LOAD_DOTENV=true
-if (process.env.NODE_ENV === "development" || process.env.LOAD_DOTENV === "true") {
+// Charge le .env local si on n'est pas sur Render
+if (!process.env.RENDER) {
   dotenv.config();
 }
 
 const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl && !(process.env.DB_HOST && process.env.DB_USERNAME && process.env.DB_NAME)) {
-  console.warn("⚠️ DATABASE_URL manquant. Assurez-vous que DB_HOST/DB_USERNAME/DB_PASSWORD/DB_NAME sont définis.");
+if (!databaseUrl) {
+  console.warn("⚠️ DATABASE_URL manquant dans les variables d'environnement.");
 }
 
-const isProd = process.env.NODE_ENV === "production";
+// Sur Render avec npx tsx, on lit directement les fichiers .ts de src/
+const isRender = process.env.RENDER === "true" || !!process.env.RENDER;
 
 const options: DataSourceOptions = {
   type: "postgres",
   url: databaseUrl,
-  host: !databaseUrl ? (process.env.DB_HOST ?? "localhost") : undefined,
-  port: !databaseUrl ? parseInt(process.env.DB_PORT ?? "5432") : undefined,
-  username: !databaseUrl ? (process.env.DB_USERNAME ?? "") : undefined,
-  password: !databaseUrl ? (process.env.DB_PASSWORD ?? "") : undefined,
-  database: !databaseUrl ? (process.env.DB_NAME ?? "") : undefined,
-  ssl: isProd ? { rejectUnauthorized: false } : false,
-  synchronize: !isProd,
-  logging: process.env.NODE_ENV === "development",
-  entities: [isProd ? "dist/modules/**/entity/*.js" : "src/modules/**/entity/*.ts"],
-  migrations: [isProd ? "dist/database/migrations/*.js" : "src/database/migrations/*.ts"],
-  subscribers: [isProd ? "dist/database/subscribers/*.js" : "src/database/subscribers/*.ts"],
+  // 💡 Configuration SSL obligatoire pour Neon sur Render
+  ssl: isRender ? { rejectUnauthorized: false } : false,
+  
+  // 💡 Phase 1 du TODO : Conserver synchronize=true temporairement pour créer les tables
+  synchronize: true, 
+  logging: !isRender,
+
+  // 💡 Puisqu'on utilise "npx tsx", on doit impérativement cibler le dossier "src/" et les fichiers ".ts"
+  entities: ["src/modules/**/entity/*.ts"],
+  migrations: ["src/database/migrations/*.ts"],
+  subscribers: ["src/database/subscribers/*.ts"],
 } as DataSourceOptions;
 
 export const AppDataSource = new DataSource(options);
 
 /**
- * Initialize the data source with retries and exponential backoff.
- * @param retries number of retries (default 5)
- * @param delayMs base delay in ms (default 2000)
+ * Initialisation de la base de données avec reconnexions successives
  */
 export async function initializeDataSourceWithRetry(retries = 5, delayMs = 2000): Promise<void> {
   let attempt = 0;
@@ -43,15 +42,18 @@ export async function initializeDataSourceWithRetry(retries = 5, delayMs = 2000)
     try {
       if (!AppDataSource.isInitialized) {
         await AppDataSource.initialize();
+        console.log("🚀 Connexion à la base de données Neon réussie !");
       }
       return;
     } catch (err) {
       attempt++;
       if (attempt > retries) {
+        console.error("❌ Impossible de se connecter à la base de données après 5 tentatives.");
         throw err;
       }
       const wait = delayMs * Math.pow(2, attempt - 1);
       console.warn(`DB connection failed (attempt ${attempt}/${retries}), retrying in ${wait}ms...`);
+      console.error(`Détail de l'erreur :`, err);
       // eslint-disable-next-line no-await-in-loop
       await new Promise((res) => setTimeout(res, wait));
     }
