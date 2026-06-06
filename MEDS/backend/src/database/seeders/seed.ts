@@ -282,13 +282,14 @@ async function seedPharmacies() {
   ];
 
   for (const p of listToSeed) {
-    let pharmacie = await repo.findOne({ where: { nom: p.nom } });
+    let pharmacie = (await repo.findOne({ where: { nom: p.nom } })) as Pharmacie | null;
     if (!pharmacie) {
-      pharmacie = repo.create(p as any);
+      pharmacie = (repo.create(p as any) as unknown) as Pharmacie;
+      await repo.save(pharmacie);
     } else {
       repo.merge(pharmacie, p as any);
+      await repo.save(pharmacie);
     }
-    await repo.save(pharmacie);
   }
 }
 
@@ -339,17 +340,17 @@ async function seedCommandes() {
     date.setDate(date.getDate() - randInt(0, 30));
 
     const patient = pick(patients);
-    const pharmacie = pick(pharmacies);
+    const pharmacieChoisie = pick(pharmacies);
 
     const commande = commRepo.create({
       patientId: (patient as any).id,
-      pharmacieId: (pharmacie as any).id,
-      statut: OrderStatus.LIVRE,
+      pharmacieId: (pharmacieChoisie as any).id,
+      statut: OrderStatus.LIVREE,
       montantTotal: 0,
       dateCommande: date,
     } as any);
 
-    const savedComm = await commRepo.save(commande);
+    const savedComm = (await commRepo.save(commande) as unknown) as Commande;
 
     // Add 1-3 items per order
     let total = 0;
