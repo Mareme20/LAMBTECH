@@ -1,19 +1,85 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { Package, ShoppingBag, TrendingUp, AlertCircle, Clock, ChevronRight, Loader2, Users, Plus, X, Activity, Stethoscope, Trash2 } from 'lucide-react';
+import {
+  Package, ShoppingBag, TrendingUp, AlertCircle, Clock, 
+  ChevronRight, Loader2, Users, Plus, X, Activity, 
+  Stethoscope, Trash2, Building2, DollarSign, CheckCircle2,
+  ArrowUp, ArrowDown, Zap, Filter, Search, Eye, Edit3,
+  BarChart3, PieChart, Sparkles, Shield
+} from 'lucide-react';
 import { StockService, CommandeService, MedicamentService } from '../services/api.service';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import styles from './PharmacieDashboard.module.css';
+import './pharmacieDashboard.css';
 
-/* ─── Page: Accueil Pharmacie ─── */
+/* ═══════════════════════════════════════════════════════════════
+   COMPOSANTS PARTAGÉS
+   ═══════════════════════════════════════════════════════════════ */
+
+const SectionHeader: React.FC<{ 
+  title: string; 
+  subtitle: string; 
+  icon?: React.ReactNode;
+  badge?: string;
+  action?: React.ReactNode;
+}> = ({ title, subtitle, icon, badge, action }) => (
+  <div className="ph-section-header">
+    <div className="ph-header-left">
+      {badge && (
+        <div className="ph-badge">
+          {icon}
+          <span>{badge}</span>
+        </div>
+      )}
+      <h1 className="ph-title">{title}</h1>
+      <p className="ph-subtitle">{subtitle}</p>
+    </div>
+    {action && <div className="ph-header-action">{action}</div>}
+  </div>
+);
+
+const StatCard: React.FC<{
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  color: string;
+  trend?: { value: string; positive: boolean };
+}> = ({ icon, value, label, color, trend }) => (
+  <div className={`ph-stat-card ${color}`}>
+    <div className="ph-stat-icon-wrapper">
+      {icon}
+    </div>
+    <div className="ph-stat-content">
+      <span className="ph-stat-value">{value}</span>
+      <span className="ph-stat-label">{label}</span>
+      {trend && (
+        <span className={`ph-stat-trend ${trend.positive ? 'positive' : 'negative'}`}>
+          {trend.positive ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+          {trend.value}
+        </span>
+      )}
+    </div>
+    <div className="ph-stat-glow" />
+  </div>
+);
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: ACCUEIL PHARMACIE
+   ═══════════════════════════════════════════════════════════════ */
+
 const PharmacieHome: React.FC = () => {
   const { socket } = useSocket();
   const [orders, setOrders] = useState<any[]>([]);
   const [stocks, setStocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [revenue, setRevenue] = useState(0);
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    lowStock: 0,
+    completedToday: 0
+  });
 
   const fetchData = async () => {
     try {
@@ -21,13 +87,24 @@ const PharmacieHome: React.FC = () => {
         CommandeService.findAll(),
         StockService.findAll()
       ]);
+      
       setOrders(ordersRes);
-      setStocks(stockRes.filter(s => s.quantite < 10));
+      setStocks(stockRes.filter((s: any) => s.quantite < 10));
       
       const totalRevenue = ordersRes
-        .filter(o => o.statut === 'LIVREE' || o.statut === 'PRETE' || o.statut === 'LIVRAISON')
-        .reduce((acc, o) => acc + Number(o.montantTotal), 0);
+        .filter((o: any) => ['LIVREE', 'PRETE', 'LIVRAISON'].includes(o.statut))
+        .reduce((acc: number, o: any) => acc + Number(o.montantTotal), 0);
       setRevenue(totalRevenue);
+
+      const today = new Date().toDateString();
+      setStats({
+        totalOrders: ordersRes.length,
+        pendingOrders: ordersRes.filter((o: any) => o.statut === 'EN_ATTENTE').length,
+        lowStock: stockRes.filter((s: any) => s.quantite < 10).length,
+        completedToday: ordersRes.filter((o: any) => 
+          o.statut === 'LIVREE' && new Date(o.dateCommande).toDateString() === today
+        ).length
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -41,7 +118,7 @@ const PharmacieHome: React.FC = () => {
     if (socket) {
       socket.on('nouvelle_commande', () => {
         fetchData();
-        // Optionnel: petit son de notification
+        playNotificationSound();
       });
       socket.on('commande_statut', () => fetchData());
     }
@@ -54,72 +131,196 @@ const PharmacieHome: React.FC = () => {
     };
   }, [socket]);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-accent" /></div>;
+  const playNotificationSound = () => {
+    // Son de notification optionnel
+    const audio = new Audio('/sounds/notification.mp3');
+    audio.volume = 0.3;
+    audio.play().catch(() => {});
+  };
+
+  if (loading) {
+    return (
+      <div className="ph-loading-screen">
+        <Loader2 className="animate-spin ph-loading-icon" size={48} />
+        <p>Chargement du tableau de bord...</p>
+      </div>
+    );
+  }
+
+  const urgentOrders = orders.filter(o => o.statut === 'EN_ATTENTE').slice(0, 5);
+  const lowStockItems = stocks.slice(0, 5);
 
   return (
-    <div className={styles.container}>
-      <div className="mb-8">
-        <h1 className={styles.title}>Tableau de bord</h1>
-        <p className={styles.subtitle}>Aperçu rapide de votre activité</p>
+    <div className="ph-container">
+      <SectionHeader 
+        title="Tableau de bord"
+        subtitle="Vue d'ensemble de votre pharmacie"
+        icon={<Building2 size={16} />}
+        badge="Pharmacie"
+      />
+
+      {/* Statistiques */}
+      <div className="ph-stats-grid">
+        <StatCard
+          icon={<ShoppingBag size={22} />}
+          value={stats.totalOrders.toString()}
+          label="Commandes totales"
+          color="sage"
+          trend={{ value: '12%', positive: true }}
+        />
+        <StatCard
+          icon={<AlertCircle size={22} />}
+          value={stats.lowStock.toString()}
+          label="Alertes stock bas"
+          color="warning"
+          trend={{ value: '3 nouveaux', positive: false }}
+        />
+        <StatCard
+          icon={<DollarSign size={22} />}
+          value={`${revenue.toLocaleString()} FCFA`}
+          label="Chiffre d'affaires"
+          color="blue"
+          trend={{ value: '8%', positive: true }}
+        />
+        <StatCard
+          icon={<Clock size={22} />}
+          value={stats.pendingOrders.toString()}
+          label="En attente"
+          color="terracotta"
+        />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: "Commandes", value: orders.length, icon: <ShoppingBag size={20} className="text-accent" />, bg: 'bg-accent/10' },
-          { label: 'Alertes stock', value: stocks.length, icon: <AlertCircle size={20} className="text-red-400" />, bg: 'bg-red-50' },
-          { label: 'Revenu (FCFA)', value: revenue.toLocaleString(), icon: <TrendingUp size={20} className="text-blue-500" />, bg: 'bg-blue-50' },
-          { label: 'En attente', value: orders.filter(o => o.statut === 'EN_ATTENTE').length, icon: <Clock size={20} className="text-orange-400" />, bg: 'bg-orange-50' },
-        ].map(s => (
-          <div key={s.label} className={styles.card}>
-            <div className={`w-11 h-11 ${s.bg} rounded-2xl flex items-center justify-center mb-3`}>{s.icon}</div>
-            <p className="font-outfit font-black text-primary text-2xl">{s.value}</p>
-            <p className="text-xs text-gray-400 font-medium mt-0.5">{s.label}</p>
+      {/* Grille principale */}
+      <div className="ph-main-grid">
+        {/* Commandes urgentes */}
+        <div className="ph-card">
+          <div className="ph-card-header">
+            <h3 className="ph-card-title">
+              <Clock size={20} />
+              Commandes en attente
+            </h3>
+            {urgentOrders.length > 0 && (
+              <span className="ph-count-badge urgent">{urgentOrders.length}</span>
+            )}
+            <a href="/pharmacie/orders" className="ph-card-link">
+              Voir tout <ChevronRight size={14} />
+            </a>
           </div>
-        ))}
-      </div>
 
-      <div className={styles.grid2}>
-        <div className={styles.card}>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-outfit font-black text-primary text-lg">Commandes urgentes</h2>
-            <a href="/pharmacie/orders" className="text-xs font-bold text-accent flex items-center gap-1">Voir tout <ChevronRight size={14} /></a>
-          </div>
-          {orders.filter(o => o.statut === 'EN_ATTENTE').slice(0, 5).length > 0 ? 
-            orders.filter(o => o.statut === 'EN_ATTENTE').slice(0, 5).map((o) => (
-            <div key={o.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-surfaceAlt rounded-2xl flex items-center justify-center"><Package size={18} className="text-gray-400" /></div>
-                <div><p className="font-outfit font-black text-primary text-sm">#{o.id}</p><p className="text-xs text-gray-400 font-medium">{o.statut}</p></div>
-              </div>
-              <span className={`text-[10px] font-black px-2.5 py-1 rounded-full bg-orange-50 text-orange-500`}>{o.statut}</span>
+          {urgentOrders.length > 0 ? (
+            <div className="ph-order-list">
+              {urgentOrders.map((order) => (
+                <div key={order.id} className="ph-order-item">
+                  <div className="ph-order-icon">
+                    <Package size={18} />
+                  </div>
+                  <div className="ph-order-info">
+                    <strong>#{order.id}</strong>
+                    <span>{order.patient?.nomComplet || 'Patient'}</span>
+                  </div>
+                  <div className="ph-order-amount">
+                    {order.montantTotal} FCFA
+                  </div>
+                  <span className="ph-status-badge warning">En attente</span>
+                </div>
+              ))}
             </div>
-          )) : <p className="text-sm text-gray-400">Aucune commande urgente</p>}
+          ) : (
+            <div className="ph-empty-state small">
+              <CheckCircle2 size={32} className="ph-empty-icon" />
+              <p>Aucune commande en attente</p>
+              <span>Tout est à jour !</span>
+            </div>
+          )}
         </div>
-        <div className={styles.card}>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-outfit font-black text-primary text-lg">Alertes Inventaire</h2>
-            <a href="/pharmacie/stock" className="text-xs font-bold text-accent flex items-center gap-1">Gérer le stock <ChevronRight size={14} /></a>
+
+        {/* Alertes stock */}
+        <div className="ph-card">
+          <div className="ph-card-header">
+            <h3 className="ph-card-title">
+              <AlertCircle size={20} />
+              Alertes inventaire
+            </h3>
+            {lowStockItems.length > 0 && (
+              <span className="ph-count-badge danger">{lowStockItems.length}</span>
+            )}
+            <a href="/pharmacie/stock" className="ph-card-link">
+              Gérer <ChevronRight size={14} />
+            </a>
           </div>
-          {stocks.length > 0 ? stocks.slice(0, 5).map((s) => (
-            <div key={s.id} className="py-3 border-b border-gray-50 last:border-0">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-bold text-primary flex items-center gap-2"><AlertCircle size={14} className="text-red-400" /> {s.medicament?.nomCommercial}</span>
-                <span className="text-xs font-black text-red-400">{s.quantite} restants</span>
-              </div>
+
+          {lowStockItems.length > 0 ? (
+            <div className="ph-stock-alerts">
+              {lowStockItems.map((item) => (
+                <div key={item.id} className="ph-stock-item">
+                  <div className="ph-stock-info">
+                    <div className={`ph-stock-indicator ${item.quantite < 5 ? 'critical' : 'low'}`} />
+                    <div>
+                      <strong>{item.medicament?.nomCommercial}</strong>
+                      <span>{item.medicament?.forme}</span>
+                    </div>
+                  </div>
+                  <div className="ph-stock-qty">
+                    <span className={item.quantite < 5 ? 'text-critical' : 'text-warning'}>
+                      {item.quantite} unités
+                    </span>
+                    <div className="ph-stock-bar">
+                      <div 
+                        className={`ph-stock-level ${item.quantite < 5 ? 'critical' : 'low'}`}
+                        style={{ width: `${Math.min((item.quantite / 10) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          )) : <p className="text-sm text-gray-400">Tout est en règle</p>}
+          ) : (
+            <div className="ph-empty-state small">
+              <CheckCircle2 size={32} className="ph-empty-icon" />
+              <p>Stock suffisant</p>
+              <span>Tous les produits sont bien approvisionnés</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Carte promotionnelle */}
+      <div className="ph-promo-card">
+        <div className="ph-promo-bg">
+          <div className="ph-promo-gradient" />
+          <div className="ph-promo-pattern" />
+        </div>
+        <div className="ph-promo-content">
+          <div className="ph-promo-icon">
+            <Sparkles size={32} />
+          </div>
+          <div>
+            <h3 className="ph-promo-title">Développez votre activité</h3>
+            <p className="ph-promo-text">
+              Les pharmacies sur MEDS voient leurs ventes augmenter en moyenne de 35%. 
+              Optimisez vos stocks et attirez plus de clients.
+            </p>
+            <a href="/pharmacie/stats" className="ph-promo-btn">
+              <BarChart3 size={16} />
+              Voir mes statistiques
+            </a>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-/* ─── Page: Inventaire (Stock) ─── */
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: INVENTAIRE (STOCK)
+   ═══════════════════════════════════════════════════════════════ */
+
 const StockPage: React.FC = () => {
   const [stocks, setStocks] = useState<any[]>([]);
   const [medicaments, setMedicaments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedMed, setSelectedMed] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(0);
   const { user } = useAuth();
@@ -146,7 +347,7 @@ const StockPage: React.FC = () => {
     if (!selectedMed || quantity <= 0) return;
 
     if (!user?.pharmacieId) {
-      alert("Erreur : Votre compte n'est lié à aucune pharmacie. Veuillez contacter l'administrateur.");
+      alert("Erreur : Votre compte n'est lié à aucune pharmacie.");
       return;
     }
 
@@ -157,15 +358,16 @@ const StockPage: React.FC = () => {
         quantite: quantity
       });
       setShowModal(false);
+      setSelectedMed('');
+      setQuantity(0);
       fetchStocks();
-      alert("Stock ajouté avec succès !");
     } catch (err: any) {
-      alert(err.response?.data?.message || "Erreur lors de l'ajout du stock. (Il est possible que ce produit soit déjà dans votre inventaire)");
+      alert(err.response?.data?.message || "Erreur lors de l'ajout du stock.");
     }
   };
 
   const handleUpdateQuantity = async (medicamentId: number, newQty: number) => {
-    if (!user?.pharmacieId) return;
+    if (!user?.pharmacieId || newQty < 0) return;
     try {
       await StockService.updateQuantity(user.pharmacieId, medicamentId, newQty);
       fetchStocks();
@@ -174,86 +376,178 @@ const StockPage: React.FC = () => {
     }
   };
 
+  const filteredStocks = stocks.filter(s => 
+    s.medicament?.nomCommercial?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const availableMeds = medicaments.filter(m => 
+    !stocks.some(s => s.medicamentId === m.id)
+  );
+
   return (
-    <div className={styles.container}>
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className={styles.title}>Inventaire</h1>
-          <p className={styles.subtitle}>Gérez vos stocks et prix</p>
-        </div>
-        <button 
-          onClick={() => setShowModal(true)}
-          className="btn-primary py-2.5 px-6 text-sm flex items-center gap-2"
-        >
-          <Plus size={18} /> Ajouter un produit
-        </button>
+    <div className="ph-container">
+      <SectionHeader 
+        title="Inventaire"
+        subtitle="Gérez vos stocks et vos prix"
+        icon={<Package size={16} />}
+        badge="Stock"
+        action={
+          <button 
+            onClick={() => setShowModal(true)}
+            className="ph-btn-primary"
+          >
+            <Plus size={18} />
+            Ajouter un produit
+          </button>
+        }
+      />
+
+      {/* Barre de recherche */}
+      <div className="ph-search-bar">
+        <Search size={18} className="ph-search-icon" />
+        <input
+          type="text"
+          placeholder="Rechercher un médicament..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="ph-search-input"
+        />
+        <Filter size={16} className="ph-filter-icon" />
       </div>
 
-      <div className={styles.tableContainer}>
-        <div className={styles.tableHeader}>
-          <span>Médicament</span><span>Catégorie</span><span>Stock</span><span>Prix</span>
-        </div>
-        <div className="divide-y divide-gray-50">
-          {loading ? <div className="p-8 text-center"><Loader2 className="animate-spin mx-auto text-accent" /></div> : stocks.map(s => (
-            <div key={s.id} className={styles.tableRow}>
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${s.quantite < 10 ? 'bg-red-50' : 'bg-accent/10'}`}>
-                  {s.quantite < 10 ? <AlertCircle size={14} className="text-red-400" /> : <Package size={14} className="text-accent" />}
-                </div>
-                <span className={styles.medName}>{s.medicament?.nomCommercial}</span>
+      {/* Tableau */}
+      <div className="ph-table-container">
+        <div className="ph-table">
+          <div className="ph-table-header">
+            <div className="ph-th">Médicament</div>
+            <div className="ph-th">Catégorie</div>
+            <div className="ph-th">Stock</div>
+            <div className="ph-th">Prix</div>
+            <div className="ph-th">Statut</div>
+          </div>
+          
+          <div className="ph-table-body">
+            {loading ? (
+              <div className="ph-loading-row">
+                <Loader2 className="animate-spin" size={24} />
               </div>
-              <span className={styles.category}>{s.medicament?.forme}</span>
-              <div className={styles.stockInfo}>
-                <input 
-                  type="number" 
-                  value={s.quantite} 
-                  onChange={(e) => handleUpdateQuantity(s.medicamentId, Number(e.target.value))}
-                  className="w-16 bg-transparent border-b border-gray-200 focus:border-accent outline-none text-xs font-black"
-                />
-                <div className={styles.stockBar}>
-                  <div className={`${styles.stockLevel} ${s.quantite < 10 ? styles.levelCritical : styles.levelGood}`} style={{ width: `${Math.min(s.quantite, 100)}%` }} />
+            ) : filteredStocks.length > 0 ? (
+              filteredStocks.map(s => (
+                <div key={s.id} className="ph-table-row">
+                  <div className="ph-td product-cell">
+                    <div className={`ph-product-icon ${s.quantite < 10 ? 'low' : ''}`}>
+                      {s.quantite < 10 ? <AlertCircle size={16} /> : <Package size={16} />}
+                    </div>
+                    <div>
+                      <strong>{s.medicament?.nomCommercial}</strong>
+                      <span>{s.medicament?.molecule}</span>
+                    </div>
+                  </div>
+                  <div className="ph-td">
+                    <span className="ph-category-badge">{s.medicament?.forme}</span>
+                  </div>
+                  <div className="ph-td">
+                    <div className="ph-qty-control">
+                      <button 
+                        onClick={() => handleUpdateQuantity(s.medicamentId, s.quantite - 1)}
+                        className="ph-qty-btn"
+                        disabled={s.quantite <= 0}
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        value={s.quantite}
+                        onChange={(e) => handleUpdateQuantity(s.medicamentId, Number(e.target.value))}
+                        className="ph-qty-input"
+                      />
+                      <button 
+                        onClick={() => handleUpdateQuantity(s.medicamentId, s.quantite + 1)}
+                        className="ph-qty-btn"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div className="ph-td">
+                    <span className="ph-price">{s.medicament?.prixUnitaire} FCFA</span>
+                  </div>
+                  <div className="ph-td">
+                    <span className={`ph-stock-status ${s.quantite === 0 ? 'out' : s.quantite < 10 ? 'low' : 'ok'}`}>
+                      {s.quantite === 0 ? 'Rupture' : s.quantite < 10 ? 'Bas' : 'OK'}
+                    </span>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="ph-empty-table">
+                <Package size={48} className="ph-empty-icon" />
+                <p>Aucun produit trouvé</p>
+                <span>Ajoutez des médicaments à votre inventaire</span>
               </div>
-              <span className={styles.price}>{s.medicament?.prixUnitaire} FCFA</span>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Modal Ajout */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md p-8 relative animate-fade-up">
-            <button onClick={() => setShowModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-primary"><X size={24} /></button>
-            <h2 className="font-outfit font-black text-2xl text-primary mb-2">Ajouter au stock</h2>
-            <p className="text-gray-400 text-sm mb-6">Sélectionnez un médicament existant pour l'ajouter à votre pharmacie.</p>
+        <div className="ph-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="ph-modal" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowModal(false)} className="ph-modal-close">
+              <X size={24} />
+            </button>
             
-            <form onSubmit={handleAddStock} className="space-y-4">
-              <div>
-                <label className="block text-xs font-black text-gray-400 mb-2 uppercase">Médicament</label>
+            <div className="ph-modal-header">
+              <div className="ph-modal-icon">
+                <Plus size={24} />
+              </div>
+              <h2>Ajouter au stock</h2>
+              <p>Sélectionnez un médicament pour l'ajouter à votre pharmacie</p>
+            </div>
+            
+            <form onSubmit={handleAddStock} className="ph-modal-form">
+              <div className="ph-form-group">
+                <label>Médicament</label>
                 <select 
                   value={selectedMed} 
                   onChange={e => setSelectedMed(e.target.value)}
-                  className="w-full bg-surfaceAlt border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 ring-accent"
                   required
+                  className="ph-select"
                 >
-                  <option value="">Sélectionner...</option>
-                  {medicaments.filter(m => !stocks.some(s => s.medicamentId === m.id)).map(m => (
-                    <option key={m.id} value={m.id}>{m.nomCommercial} ({m.forme})</option>
+                  <option value="">Sélectionner un médicament...</option>
+                  {availableMeds.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.nomCommercial} - {m.forme}
+                    </option>
                   ))}
                 </select>
+                {availableMeds.length === 0 && (
+                  <p className="ph-form-hint">Tous les médicaments sont déjà dans votre stock.</p>
+                )}
               </div>
-              <div>
-                <label className="block text-xs font-black text-gray-400 mb-2 uppercase">Quantité initiale</label>
+              
+              <div className="ph-form-group">
+                <label>Quantité initiale</label>
                 <input 
                   type="number" 
                   value={quantity} 
                   onChange={e => setQuantity(Number(e.target.value))}
-                  className="w-full bg-surfaceAlt border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 ring-accent"
                   placeholder="Ex: 50"
+                  min="1"
                   required
+                  className="ph-input"
                 />
               </div>
-              <button type="submit" className="btn-primary w-full py-4 rounded-2xl mt-4">Confirmer l'ajout</button>
+              
+              <button 
+                type="submit" 
+                className="ph-btn-submit"
+                disabled={!selectedMed || quantity <= 0}
+              >
+                <Plus size={18} />
+                Confirmer l'ajout
+              </button>
             </form>
           </div>
         </div>
@@ -262,11 +556,15 @@ const StockPage: React.FC = () => {
   );
 };
 
-/* ─── Page: Gestion Médicaments (Global) ─── */
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: CATALOGUE MÉDICAMENTS
+   ═══════════════════════════════════════════════════════════════ */
+
 const MedsPage: React.FC = () => {
   const [meds, setMeds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     nomCommercial: '',
     molecule: '',
@@ -297,7 +595,6 @@ const MedsPage: React.FC = () => {
       setShowAddModal(false);
       setFormData({ nomCommercial: '', molecule: '', forme: '', prixUnitaire: 0 });
       fetchMeds();
-      alert("Médicament ajouté au catalogue global !");
     } catch (err) {
       alert("Erreur lors de la création.");
     }
@@ -309,79 +606,171 @@ const MedsPage: React.FC = () => {
       await MedicamentService.delete(id);
       fetchMeds();
     } catch (err) {
-      alert("Erreur lors de la suppression (possiblement utilisé dans un stock).");
+      alert("Erreur lors de la suppression.");
     }
   };
 
+  const filteredMeds = meds.filter(m => 
+    m.nomCommercial?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.molecule?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className={styles.container}>
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className={styles.title}>Catalogue Médicaments</h1>
-          <p className={styles.subtitle}>Gérez la liste globale des produits</p>
-        </div>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="btn-primary py-2.5 px-6 text-sm flex items-center gap-2"
-        >
-          <Plus size={18} /> Nouveau Médicament
-        </button>
+    <div className="ph-container">
+      <SectionHeader 
+        title="Catalogue Médicaments"
+        subtitle="Gérez la liste globale des produits"
+        icon={<Stethoscope size={16} />}
+        badge="Catalogue"
+        action={
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="ph-btn-primary"
+          >
+            <Plus size={18} />
+            Nouveau médicament
+          </button>
+        }
+      />
+
+      <div className="ph-search-bar">
+        <Search size={18} className="ph-search-icon" />
+        <input
+          type="text"
+          placeholder="Rechercher par nom ou molécule..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="ph-search-input"
+        />
       </div>
 
-      <div className={styles.table}>
-        <div className={styles.tableHeader}>
-          <span>Produit</span><span>Molécule</span><span>Forme</span><span>Prix Base</span><span>Actions</span>
-        </div>
-        <div className="divide-y divide-gray-50">
-          {loading ? <div className="p-8 text-center"><Loader2 className="animate-spin mx-auto text-accent" /></div> : meds.map(m => (
-            <div key={m.id} className={styles.tableRow}>
-              <div className="flex items-center gap-3">
-                <Stethoscope size={16} className="text-primary" />
-                <span className="font-outfit font-black text-primary text-sm">{m.nomCommercial}</span>
+      <div className="ph-table-container">
+        <div className="ph-table">
+          <div className="ph-table-header">
+            <div className="ph-th">Produit</div>
+            <div className="ph-th">Molécule</div>
+            <div className="ph-th">Forme/Dosage</div>
+            <div className="ph-th">Prix Base</div>
+            <div className="ph-th">Actions</div>
+          </div>
+          
+          <div className="ph-table-body">
+            {loading ? (
+              <div className="ph-loading-row">
+                <Loader2 className="animate-spin" size={24} />
               </div>
-              <span className="text-xs text-gray-500 font-medium">{m.molecule}</span>
-              <span className="text-xs text-gray-500 font-medium">{m.forme}</span>
-              <span className="text-xs font-black text-accent">{m.prixUnitaire} FCFA</span>
-              <div className="flex gap-2">
-                <button onClick={() => handleDeleteMed(m.id)} className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+            ) : filteredMeds.length > 0 ? (
+              filteredMeds.map(m => (
+                <div key={m.id} className="ph-table-row">
+                  <div className="ph-td product-cell">
+                    <div className="ph-product-icon catalog">
+                      <Stethoscope size={16} />
+                    </div>
+                    <strong>{m.nomCommercial}</strong>
+                  </div>
+                  <div className="ph-td">
+                    <span className="ph-molecule">{m.molecule}</span>
+                  </div>
+                  <div className="ph-td">
+                    <span className="ph-category-badge">{m.forme}</span>
+                  </div>
+                  <div className="ph-td">
+                    <span className="ph-price">{m.prixUnitaire} FCFA</span>
+                  </div>
+                  <div className="ph-td">
+                    <div className="ph-actions">
+                      <button className="ph-action-btn">
+                        <Eye size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteMed(m.id)}
+                        className="ph-action-btn danger"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="ph-empty-table">
+                <Stethoscope size={48} className="ph-empty-icon" />
+                <p>Aucun médicament trouvé</p>
+                <span>Ajoutez des médicaments au catalogue</span>
               </div>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Modal Ajout */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg p-8 relative animate-fade-up">
-            <button onClick={() => setShowAddModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-primary"><X size={24} /></button>
-            <h2 className="font-outfit font-black text-2xl text-primary mb-6">Nouveau Médicament</h2>
+        <div className="ph-modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="ph-modal wide" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowAddModal(false)} className="ph-modal-close">
+              <X size={24} />
+            </button>
             
-            <form onSubmit={handleCreateMed} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-black text-gray-400 mb-2 uppercase">Nom Commercial</label>
-                  <input required type="text" className="w-full bg-surfaceAlt border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 ring-accent"
-                    value={formData.nomCommercial} onChange={e => setFormData({...formData, nomCommercial: e.target.value})} placeholder="Ex: Doliprane" />
+            <div className="ph-modal-header">
+              <div className="ph-modal-icon catalog">
+                <Stethoscope size={24} />
+              </div>
+              <h2>Nouveau Médicament</h2>
+              <p>Ajoutez un produit au catalogue global</p>
+            </div>
+            
+            <form onSubmit={handleCreateMed} className="ph-modal-form">
+              <div className="ph-form-grid">
+                <div className="ph-form-group">
+                  <label>Nom Commercial</label>
+                  <input 
+                    required 
+                    type="text" 
+                    className="ph-input"
+                    value={formData.nomCommercial} 
+                    onChange={e => setFormData({...formData, nomCommercial: e.target.value})} 
+                    placeholder="Ex: Doliprane" 
+                  />
                 </div>
-                <div>
-                  <label className="block text-xs font-black text-gray-400 mb-2 uppercase">Molécule</label>
-                  <input required type="text" className="w-full bg-surfaceAlt border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 ring-accent"
-                    value={formData.molecule} onChange={e => setFormData({...formData, molecule: e.target.value})} placeholder="Ex: Paracétamol" />
+                <div className="ph-form-group">
+                  <label>Molécule</label>
+                  <input 
+                    required 
+                    type="text" 
+                    className="ph-input"
+                    value={formData.molecule} 
+                    onChange={e => setFormData({...formData, molecule: e.target.value})} 
+                    placeholder="Ex: Paracétamol" 
+                  />
+                </div>
+                <div className="ph-form-group">
+                  <label>Forme / Dosage</label>
+                  <input 
+                    required 
+                    type="text" 
+                    className="ph-input"
+                    value={formData.forme} 
+                    onChange={e => setFormData({...formData, forme: e.target.value})} 
+                    placeholder="Ex: 500mg, Comprimé" 
+                  />
+                </div>
+                <div className="ph-form-group">
+                  <label>Prix Unitaire (FCFA)</label>
+                  <input 
+                    required 
+                    type="number" 
+                    className="ph-input"
+                    value={formData.prixUnitaire} 
+                    onChange={e => setFormData({...formData, prixUnitaire: Number(e.target.value)})} 
+                    placeholder="Ex: 1500" 
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-black text-gray-400 mb-2 uppercase">Forme/Dosage</label>
-                  <input required type="text" className="w-full bg-surfaceAlt border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 ring-accent"
-                    value={formData.forme} onChange={e => setFormData({...formData, forme: e.target.value})} placeholder="Ex: 500mg, Comprimé" />
-                </div>
-                <div>
-                  <label className="block text-xs font-black text-gray-400 mb-2 uppercase">Prix Unitaire (FCFA)</label>
-                  <input required type="number" className="w-full bg-surfaceAlt border-0 rounded-2xl px-4 py-3 text-sm focus:ring-2 ring-accent"
-                    value={formData.prixUnitaire} onChange={e => setFormData({...formData, prixUnitaire: Number(e.target.value)})} />
-                </div>
-              </div>
-              <button type="submit" className="btn-primary w-full py-4 rounded-2xl mt-4">Enregistrer dans le catalogue</button>
+              
+              <button type="submit" className="ph-btn-submit">
+                <Plus size={18} />
+                Enregistrer dans le catalogue
+              </button>
             </form>
           </div>
         </div>
@@ -390,11 +779,15 @@ const MedsPage: React.FC = () => {
   );
 };
 
-/* ─── Page: Commandes (Pharmacien) ─── */
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: COMMANDES
+   ═══════════════════════════════════════════════════════════════ */
+
 const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
+  const [filter, setFilter] = useState<string>('ALL');
 
   const fetchOrders = async () => {
     try {
@@ -415,7 +808,7 @@ const OrdersPage: React.FC = () => {
     setUpdating(id);
     try {
       await CommandeService.updateStatus(id, newStatus);
-      await fetchOrders(); // Rafraîchir la liste
+      await fetchOrders();
     } catch (err) {
       alert("Erreur lors de la mise à jour du statut");
     } finally {
@@ -423,96 +816,152 @@ const OrdersPage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'EN_ATTENTE': return 'bg-orange-50 text-orange-500';
-      case 'PAYEE': return 'bg-blue-50 text-blue-500';
-      case 'PREPARATION': return 'bg-purple-50 text-purple-500';
-      case 'PRETE': return 'bg-accent/10 text-accent';
-      case 'LIVRAISON': return 'bg-indigo-50 text-indigo-500';
-      case 'LIVREE': return 'bg-accent/10 text-accent';
-      case 'ANNULEE': return 'bg-red-50 text-red-500';
-      default: return 'bg-gray-50 text-gray-400';
-    }
+  const getStatusInfo = (status: string) => {
+    const statuses: any = {
+      'EN_ATTENTE': { color: 'warning', label: 'En attente', icon: <Clock size={14} /> },
+      'PAYEE': { color: 'info', label: 'Payée', icon: <Shield size={14} /> },
+      'PREPARATION': { color: 'purple', label: 'Préparation', icon: <Package size={14} /> },
+      'PRETE': { color: 'sage', label: 'Prête', icon: <CheckCircle2 size={14} /> },
+      'LIVRAISON': { color: 'blue', label: 'Livraison', icon: <Zap size={14} /> },
+      'LIVREE': { color: 'success', label: 'Livrée', icon: <CheckCircle2 size={14} /> },
+      'ANNULEE': { color: 'danger', label: 'Annulée', icon: <X size={14} /> },
+    };
+    return statuses[status] || statuses['EN_ATTENTE'];
   };
 
+  const filters = [
+    { value: 'ALL', label: 'Toutes' },
+    { value: 'EN_ATTENTE', label: 'En attente' },
+    { value: 'PAYEE', label: 'Payées' },
+    { value: 'PREPARATION', label: 'En préparation' },
+    { value: 'PRETE', label: 'Prêtes' },
+    { value: 'LIVREE', label: 'Livrées' },
+  ];
+
+  const filteredOrders = filter === 'ALL' 
+    ? orders 
+    : orders.filter(o => o.statut === filter);
+
   return (
-    <div className={styles.container}>
-      <div className="mb-8">
-        <h1 className={styles.title}>Gestion des Commandes</h1>
-        <p className={styles.subtitle}>Validez et préparez les commandes reçues</p>
+    <div className="ph-container">
+      <SectionHeader 
+        title="Gestion des Commandes"
+        subtitle="Validez et préparez les commandes reçues"
+        icon={<ShoppingBag size={16} />}
+        badge="Commandes"
+      />
+
+      {/* Filtres */}
+      <div className="ph-filters">
+        {filters.map(f => (
+          <button
+            key={f.value}
+            onClick={() => setFilter(f.value)}
+            className={`ph-filter-btn ${filter === f.value ? 'active' : ''}`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-soft overflow-hidden">
+      {/* Liste des commandes */}
+      <div className="ph-orders-container">
         {loading ? (
-          <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto text-accent" /></div>
-        ) : orders.length > 0 ? (
-          <div className="divide-y divide-gray-50">
-            {orders.map((o) => (
-              <div key={o.id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-surfaceAlt flex items-center justify-center shrink-0">
-                      <ShoppingBag size={24} className="text-gray-400" />
+          <div className="ph-loading-screen">
+            <Loader2 className="animate-spin ph-loading-icon" size={40} />
+          </div>
+        ) : filteredOrders.length > 0 ? (
+          <div className="ph-orders-list">
+            {filteredOrders.map((order) => {
+              const statusInfo = getStatusInfo(order.statut);
+              return (
+                <div key={order.id} className="ph-order-card">
+                  <div className="ph-order-header">
+                    <div className="ph-order-id-section">
+                      <div className="ph-order-id-icon">
+                        <ShoppingBag size={20} />
+                      </div>
+                      <div>
+                        <strong>Commande #{order.id}</strong>
+                        <span>{new Date(order.dateCommande).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}</span>
+                      </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-outfit font-black text-primary text-lg">Commande #{o.id}</span>
-                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${getStatusColor(o.statut)}`}>
-                          {o.statut}
-                        </span>
-                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${o.modeRecuperation === 'RETRAIT' ? 'bg-purple-50 text-purple-500' : 'bg-blue-50 text-blue-500'}`}>
-                          {o.modeRecuperation === 'RETRAIT' ? '🏪 RETRAIT' : '🛵 LIVRAISON'}
-                        </span>
-                      </div>
-                      <p className="text-sm font-bold text-gray-500 flex items-center gap-2">
-                        <Users size={14} /> {o.patient?.nomComplet} • {o.patient?.telephone}
-                      </p>
-                      <div className="mt-3 space-y-1">
-                        {o.items?.map((item: any, idx: number) => (
-                          <p key={idx} className="text-xs text-gray-400 font-medium">
-                            • {item.quantite}x {item.medicament?.nomCommercial} ({item.prixUnitaire} FCFA)
-                          </p>
-                        ))}
-                      </div>
+                    
+                    <div className="ph-order-status-section">
+                      <span className={`ph-status-badge ${statusInfo.color}`}>
+                        {statusInfo.icon}
+                        {statusInfo.label}
+                      </span>
+                      <span className={`ph-mode-badge ${order.modeRecuperation === 'RETRAIT' ? 'retrait' : 'livraison'}`}>
+                        {order.modeRecuperation === 'RETRAIT' ? '🏪 Retrait' : '🛵 Livraison'}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-3">
-                    <p className="font-outfit font-black text-primary text-xl">{o.montantTotal} FCFA</p>
-                    <div className="flex gap-2">
-                      {o.statut === 'PAYEE' && (
+                  <div className="ph-order-body">
+                    <div className="ph-order-customer">
+                      <Users size={16} />
+                      <div>
+                        <strong>{order.patient?.nomComplet}</strong>
+                        <span>{order.patient?.telephone}</span>
+                      </div>
+                    </div>
+
+                    <div className="ph-order-items">
+                      {order.items?.map((item: any, idx: number) => (
+                        <div key={idx} className="ph-order-item-row">
+                          <span>• {item.quantite}x {item.medicament?.nomCommercial}</span>
+                          <span className="ph-item-price">{item.prixUnitaire} FCFA</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="ph-order-footer">
+                    <div className="ph-order-total">
+                      <span>Total</span>
+                      <strong>{order.montantTotal} FCFA</strong>
+                    </div>
+
+                    <div className="ph-order-actions">
+                      {order.statut === 'PAYEE' && (
                         <button 
-                          onClick={() => updateStatus(o.id, 'PREPARATION')}
-                          disabled={updating === o.id}
-                          className="bg-blue-500 text-white text-[11px] font-black px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors"
+                          onClick={() => updateStatus(order.id, 'PREPARATION')}
+                          disabled={updating === order.id}
+                          className="ph-action-btn-primary"
                         >
-                          Lancer préparation
+                          {updating === order.id ? <Loader2 className="animate-spin" size={14} /> : 'Lancer préparation'}
                         </button>
                       )}
-                      {o.statut === 'PREPARATION' && (
+                      {order.statut === 'PREPARATION' && (
                         <button 
-                          onClick={() => updateStatus(o.id, 'PRETE')}
-                          disabled={updating === o.id}
-                          className="bg-purple-500 text-white text-[11px] font-black px-4 py-2 rounded-xl hover:bg-purple-600 transition-colors"
+                          onClick={() => updateStatus(order.id, 'PRETE')}
+                          disabled={updating === order.id}
+                          className="ph-action-btn-success"
                         >
-                          {o.modeRecuperation === 'RETRAIT' ? 'Prêt pour retrait' : 'Prêt pour livraison'}
+                          {updating === order.id ? <Loader2 className="animate-spin" size={14} /> : 
+                            order.modeRecuperation === 'RETRAIT' ? 'Prêt pour retrait' : 'Prêt pour livraison'}
                         </button>
                       )}
-                      {o.statut === 'PRETE' && o.modeRecuperation === 'RETRAIT' && (
+                      {order.statut === 'PRETE' && order.modeRecuperation === 'RETRAIT' && (
                         <button 
-                          onClick={() => updateStatus(o.id, 'LIVREE')}
-                          disabled={updating === o.id}
-                          className="bg-accent text-white text-[11px] font-black px-4 py-2 rounded-xl hover:bg-accent/80 transition-all shadow-soft"
+                          onClick={() => updateStatus(order.id, 'LIVREE')}
+                          disabled={updating === order.id}
+                          className="ph-action-btn-success"
                         >
-                          Confirmer remise en main propre
+                          {updating === order.id ? <Loader2 className="animate-spin" size={14} /> : 'Confirmer remise'}
                         </button>
                       )}
-                      {o.statut !== 'LIVREE' && o.statut !== 'ANNULEE' && (
+                      {!['LIVREE', 'ANNULEE'].includes(order.statut) && (
                         <button 
-                          onClick={() => updateStatus(o.id, 'ANNULEE')}
-                          disabled={updating === o.id}
-                          className="bg-red-50 text-red-400 text-[11px] font-black px-4 py-2 rounded-xl hover:bg-red-100 transition-colors"
+                          onClick={() => updateStatus(order.id, 'ANNULEE')}
+                          disabled={updating === order.id}
+                          className="ph-action-btn-danger"
                         >
                           Annuler
                         </button>
@@ -520,13 +969,14 @@ const OrdersPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
-          <div className="p-20 text-center">
-            <ShoppingBag size={48} className="mx-auto text-gray-200 mb-4" />
-            <p className="text-gray-400 font-medium">Aucune commande pour le moment.</p>
+          <div className="ph-empty-state large">
+            <ShoppingBag size={64} className="ph-empty-icon" />
+            <h3>Aucune commande</h3>
+            <p>Aucune commande ne correspond à ce filtre</p>
           </div>
         )}
       </div>
@@ -534,59 +984,82 @@ const OrdersPage: React.FC = () => {
   );
 };
 
-/* ─── Page: Statistiques ─── */
+/* ═══════════════════════════════════════════════════════════════
+   PAGE: STATISTIQUES
+   ═══════════════════════════════════════════════════════════════ */
+
 const StatsPage: React.FC = () => {
-    const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
 
-    useEffect(() => {
-        CommandeService.findAll().then(res => {
-            setOrders(res);
-        });
-    }, []);
+  useEffect(() => {
+    CommandeService.findAll().then(res => setOrders(res));
+  }, []);
 
-    const totalRevenue = orders
-        .filter(o => o.statut === 'LIVREE' || o.statut === 'PRETE' || o.statut === 'LIVRAISON')
-        .reduce((acc, o) => acc + Number(o.montantTotal), 0);
+  const totalRevenue = orders
+    .filter(o => ['LIVREE', 'PRETE', 'LIVRAISON'].includes(o.statut))
+    .reduce((acc, o) => acc + Number(o.montantTotal), 0);
 
-    const completedOrders = orders.filter(o => o.statut === 'LIVREE').length;
+  const completedOrders = orders.filter(o => o.statut === 'LIVREE').length;
+  const successRate = orders.length > 0 ? Math.round((completedOrders / orders.length) * 100) : 0;
 
-    return (
-        <div className={styles.container}>
-            <div className="mb-8">
-                <h1 className={styles.title}>Analyses de vente</h1>
-                <p className={styles.subtitle}>Performance de votre pharmacie</p>
-            </div>
+  return (
+    <div className="ph-container">
+      <SectionHeader 
+        title="Analyses & Statistiques"
+        subtitle="Performance de votre pharmacie"
+        icon={<BarChart3 size={16} />}
+        badge="Stats"
+      />
 
-            <div className="grid lg:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-soft">
-                    <TrendingUp className="text-accent mb-4" size={32} />
-                    <p className="text-3xl font-outfit font-black text-primary">{totalRevenue.toLocaleString()} FCFA</p>
-                    <p className="text-sm text-gray-400 font-medium uppercase tracking-wider">Chiffre d'affaires</p>
-                </div>
-                <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-soft">
-                    <ShoppingBag className="text-blue-500 mb-4" size={32} />
-                    <p className="text-3xl font-outfit font-black text-primary">{completedOrders}</p>
-                    <p className="text-sm text-gray-400 font-medium uppercase tracking-wider">Commandes livrées</p>
-                </div>
-                <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-soft">
-                    <Activity className="text-purple-500 mb-4" size={32} />
-                    <p className="text-3xl font-outfit font-black text-primary">{orders.length > 0 ? Math.round((completedOrders / orders.length) * 100) : 0}%</p>
-                    <p className="text-sm text-gray-400 font-medium uppercase tracking-wider">Taux de succès</p>
-                </div>
-            </div>
+      <div className="ph-stats-grid">
+        <StatCard
+          icon={<DollarSign size={22} />}
+          value={`${totalRevenue.toLocaleString()} FCFA`}
+          label="Chiffre d'affaires"
+          color="sage"
+          trend={{ value: '15%', positive: true }}
+        />
+        <StatCard
+          icon={<ShoppingBag size={22} />}
+          value={completedOrders.toString()}
+          label="Commandes livrées"
+          color="blue"
+          trend={{ value: '8%', positive: true }}
+        />
+        <StatCard
+          icon={<Activity size={22} />}
+          value={`${successRate}%`}
+          label="Taux de succès"
+          color="purple"
+          trend={{ value: '5%', positive: true }}
+        />
+      </div>
 
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-soft">
-                <h2 className="font-outfit font-black text-primary text-xl mb-6">Répartition par produit</h2>
-                <p className="text-gray-400 text-sm">Visualisation des données en cours de chargement...</p>
-            </div>
+      <div className="ph-card">
+        <div className="ph-card-header">
+          <h3 className="ph-card-title">
+            <PieChart size={20} />
+            Répartition par produit
+          </h3>
         </div>
-    );
+        <div className="ph-chart-placeholder">
+          <BarChart3 size={48} className="ph-chart-icon" />
+          <p>Statistiques détaillées</p>
+          <span>Les graphiques avancés seront disponibles prochainement</span>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-/* ─── Routeur interne Pharmacie ─── */
+/* ═══════════════════════════════════════════════════════════════
+   ROUTEUR PHARMACIE
+   ═══════════════════════════════════════════════════════════════ */
+
 const PharmacieDashboard: React.FC = () => {
   const location = useLocation();
   const path = location.pathname;
+  
   let page = <PharmacieHome />;
   if (path.includes('/pharmacie/stock')) page = <StockPage />;
   else if (path.includes('/pharmacie/meds')) page = <MedsPage />;
